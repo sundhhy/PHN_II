@@ -3,8 +3,8 @@
  * Auto generated Run-Time-Environment Component Configuration File
  *      *** Do not modify ! ***
  *
- * Project: 'PplRcd' 
- * Target:  'Target 1' 
+ * Project: 'PHN_II' 
+ * Target:  'new' 
  */
 
 #ifndef RTE_COMPONENTS_H
