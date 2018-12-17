@@ -423,6 +423,8 @@ static int SmBus_Cmd_err(uint8_t	cmd)
 			return SmBus_e_xor;
 		case 3:
 			return SmBus_e_unsupported;
+		case 4:
+			return SmBus_e_break;
 		case 0xb:
 			return SmBus_e_AO_up_limit;
 		case 0xc:
@@ -563,9 +565,19 @@ static int	SmBus_dcd_AI_read(uint8_t *frame, OUT SmBus_result_t *rst)
 	ret = SmBus_Check_tail(s_tail);
 	if(ret != RET_OK)
 		return ret;
-	
-	if( SmBus_Cmd_err(s_head->cmd) != SmBus_ok)
+	ret =  SmBus_Cmd_err(s_head->cmd);
+	if(ret == SmBus_ok) 
+	{
+		rst->break_flag = 0;
+	}
+	else if(ret == SmBus_e_break)
+	{
+		rst->break_flag = 1;
+	}
+	else
+	{
 		return ERR_CMM_CMDERR;
+	}
 	
 
 	

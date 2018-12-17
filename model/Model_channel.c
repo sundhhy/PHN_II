@@ -20,21 +20,40 @@
 //------------------------------------------------------------------------------
 
 #define 	DEF_TYPE_MAX		13
+
+//以下的数值都是一位小数点
 const int16_t	def_lower_up_limit[14][2] = {
 	{250,1820},			//B
 	{-148,1000},		//E
 	{-148,1200},		//J
 	{-148,1370},		//K
-	{-50,1760},			//S
+	{-500,1760},			//S
 	{-400,4000},		//T
 	{-999,8500},		//pt100
 	{-500,1500},		//Cu50	
-	{0,1000},			//0 - 20 mv
-	{0,1000},			//0 - 10 mv
-	{0,1000},			//0 - 5V
-	{0,1000},			//1 - 5V
-	{0,1000},			//0 - 10mA
-	{0,1000},			//4 - 20mA
+	{0,10000},			//0 - 20 mv
+	{0,10000},			//0 - 10 mv
+	{0,10000},			//0 - 5V
+	{0,10000},			//1 - 5V
+	{0,10000},			//0 - 10mA
+	{0,10000},			//4 - 20mA
+		
+};
+const int16_t	lower_up_range[14][2] = {
+	{-2500,18200},			//B
+	{-2000,10000},		//E
+	{-2100,12000},		//J
+	{-2000,13720},		//K
+	{-500,17681},			//S
+	{-1000,4000},		//T
+	{-2000,8500},		//pt100
+	{-500,1500},		//Cu50	
+	{-30000,30000},			//0 - 20 mv
+	{-30000,30000},			//0 - 10 mv
+	{-30000,30000},			//0 - 5V
+	{-30000,30000},			//1 - 5V
+	{-30000,30000},			//0 - 10mA
+	{-30000,30000},			//4 - 20mA
 		
 };
 
@@ -47,14 +66,17 @@ const uint8_t	def_decimal_places[14] = {
 	1,		//T
 	1,		//pt100
 	1,		//Cu50	
-	0,			//0 - 20 mv
-	0,			//0 - 10 mv
-	0,			//0 - 5V
-	0,			//1 - 5V
-	0,			//0 - 10mA
-	0,			//4 - 20mA
+	1,			//0 - 20 mv
+	1,			//0 - 10 mv
+	1,			//0 - 5V
+	1,			//1 - 5V
+	1,			//0 - 10mA
+	1,			//4 - 20mA
 		
 };
+
+
+
 //------------------------------------------------------------------------------
 // module global vars
 //------------------------------------------------------------------------------
@@ -979,7 +1001,7 @@ static void MdlChn_run(Model *self)
 	
 	//读取工程值
 //	rd_engval:	
-	
+# if 0	
 	//信号类型是热电阻时，要进行断偶处理
 	//pt100或cu50要进行断阻处理
 	
@@ -1033,7 +1055,7 @@ static void MdlChn_run(Model *self)
 	
 	
 	read_val:
-	
+#endif	
 	//test
 	i = SmBus_AI_Read(SMBUS_MAKE_CHN(SMBUS_CHN_AI, cthis->chni.chn_NO), AI_READ_ENGVAL, chk_buf, 16);
 	if( I_uart3->write(I_uart3, chk_buf, i) != RET_OK)
@@ -1050,6 +1072,53 @@ static void MdlChn_run(Model *self)
 	}
 	if(SmBus_decode(SMBUS_AI_READ, chk_buf, &rst, sizeof(SmBus_result_t)) != RET_OK)
 		goto err;
+	//信号类型是热电阻时，要进行断偶处理
+	//pt100或cu50要进行断阻处理
+	if(rst.break_flag == 0)
+	{
+		
+		cthis->chni.flag_err &= ~CHN_ERR_BREAK_COUPLE;
+		cthis->chni.flag_err &= ~CHN_ERR_BREAK_RESISTOR;
+		
+	}	//if(rst.break_flag == 0)
+	else
+	{
+		if(cthis->chni.signal_type <= AI_Cu50)
+		{
+			
+			if(cthis->chni.signal_type < AI_Pt100)
+			{
+				duan_ou_zu_cmd = phn_sys.sys_conf.break_couple;
+				cthis->chni.flag_err |= CHN_ERR_BREAK_COUPLE;
+
+			}
+			else
+			{
+				duan_ou_zu_cmd = phn_sys.sys_conf.break_resistor;
+				cthis->chni.flag_err |= CHN_ERR_BREAK_RESISTOR;
+
+			}
+			
+			
+				switch(duan_ou_zu_cmd)
+				{
+					case 0:		//始点		
+						rst.val = cthis->chni.lower_limit;
+						break;
+					case 1:
+						rst.val = cthis->chni.value;
+						break;
+					default:
+						rst.val = cthis->chni.upper_limit;
+						break;
+					
+					
+				}
+			
+			
+		}	//if(cthis->chni.signal_type <= AI_Cu50)
+		
+	}
 
 	if(rst.chn_num != cthis->chni.chn_NO)
 	{
@@ -1600,6 +1669,10 @@ static char* MdlChn_to_string( Model *self, IN int aux, void *arg)
 				sprintf(p, "正常    ");
 			else if(cthis->chni.flag_err & CHN_ERR_CMM)
 				sprintf(p, "通信错误");
+			else if(cthis->chni.flag_err & CHN_ERR_BREAK_COUPLE)
+				sprintf(p, "断偶    ");
+			else if(cthis->chni.flag_err & CHN_ERR_BREAK_RESISTOR)
+				sprintf(p, "断阻    ");
 			
 			return p;
 		case AUX_SIGNALTYPE:
@@ -1711,6 +1784,8 @@ static int MdlChn_modify_sconf(Model *self, IN int aux, char *s, int op, int val
 			break;
 		case AUX_SIGNALTYPE:
 			p_info->signal_type = Operate_in_range(p_info->signal_type, op, 1, 0, es_max - 1);
+			p_info->lower_limit = MdlChn_Get_def_lower_limit(p_info->signal_type);
+			p_info->upper_limit = MdlChn_Get_def_up_limit(p_info->signal_type);
 			self->to_string(self, AUX_SIGNALTYPE, s);
 			break;
 		case chnaux_record_mb:
@@ -1724,12 +1799,14 @@ static int MdlChn_modify_sconf(Model *self, IN int aux, char *s, int op, int val
 			sprintf(s, "%d S", p_info->filter_time_s);
 			break;
 		case chnaux_lower_limit:
-			p_info->lower_limit = Operate_in_range_keep(p_info->lower_limit, op, val, -30000, p_info->upper_limit - 1);
+			p_info->lower_limit = Operate_in_range_keep(p_info->lower_limit, op, val, lower_up_range[p_info->signal_type][0], p_info->upper_limit - 1);
 			self->to_string(self, chnaux_lower_limit, s);
 			
 			break;
 		case chnaux_upper_limit:
-			p_info->upper_limit = Operate_in_range_keep(p_info->upper_limit, op, val, p_info->lower_limit + 1, 30000);
+			
+			p_info->upper_limit = Operate_in_range_keep(p_info->upper_limit, op, val, p_info->lower_limit + 1, \
+		lower_up_range[p_info->signal_type][1]);
 			self->to_string(self, chnaux_upper_limit, s);
 			break;
 		case chnaux_small_signal:

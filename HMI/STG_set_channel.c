@@ -558,11 +558,11 @@ static void Cns_update_content(int op, int weight)
 			
 			//要把上下限重新显示
 			pos.f_col = 1;
-			pos.f_row = 4;
+			pos.f_row = row_low_limit;
 			STG_SELF.cmd_hdl(STG_SELF.p_cmd_rcv, sycmd_reflush_position, &pos);
 		
 			pos.f_col = 1;
-			pos.f_row = 5;
+			pos.f_row = row_upper_limit;
 			STG_SELF.cmd_hdl(STG_SELF.p_cmd_rcv, sycmd_reflush_position, &pos);
 			break;
 		case row_units:		//单位

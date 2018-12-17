@@ -274,8 +274,7 @@ static void	HMI_SBG_Init_focus(HMI *self)
 	cthis->f_col = 0;
 	cthis->sub_flag &= 0xf0;
 	cthis->col_max = 1;
-//	if(((self->flag & HMIFLAG_WIN) == 0) && ((self->flag & HMIFLAG_KEYBOARD) == 0))
-	if((self->arg[2] & HMI_ATT_KEEP) == 0)
+//	if((self->arg[2] & HMI_ATT_KEEP) == 0)
 		cthis->p_sy->init(NULL);
 	SET_PG_FLAG(cthis->sub_flag, FOCUS_IN_STARTEGY);
 	

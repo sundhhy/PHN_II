@@ -52,6 +52,7 @@ typedef enum {
 	SmBus_e_ack,
 	SmBus_e_unsupported,
 	SmBus_e_xor,
+	SmBus_e_break,		//断阻或断偶
 	SmBus_e_AO_up_limit,
 	SmBus_e_AO_floor_limit,
 	SmBus_e_mast_xor,
@@ -70,11 +71,12 @@ typedef struct {
 }SmBus_conf_t;
 
 typedef struct {
-	int16_t	val;
+	int16_t		val;
 	uint8_t		chn_num;
 	uint8_t		signal_type;
+	uint8_t		break_flag;
 	
-	
+	uint8_t		none[3];
 	
 }SmBus_result_t;
 typedef struct {
@@ -112,6 +114,8 @@ int	SmBus_WR_low_limit(IN uint8_t chn, int16_t *low_limt, OUT uint8_t *frame_buf
 int	SmBus_RD_hig_limit(IN uint8_t chn, OUT uint8_t *frame_buf, int buf_size);
 int	SmBus_RD_low_limit(IN uint8_t chn, OUT uint8_t *frame_buf, int buf_size);
 int SmBus_Set_cold_tmpr(IN uint8_t clt, OUT uint8_t *frame_buf, int buf_size);		//设置冷端温度
+
+//todo： 用不着了，通过实时值读取的时候能返回断偶或断阻状态了
 int SmBus_Is_duanou(IN uint8_t chn, OUT uint8_t *frame_buf, int buf_size);
 int SmBus_Is_duanzu(IN uint8_t chn, OUT uint8_t *frame_buf, int buf_size);
 

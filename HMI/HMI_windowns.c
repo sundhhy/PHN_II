@@ -382,6 +382,7 @@ static void	WinHmi_hit(HMI *self, char kcd)
 //				p_src_hmi->flag &= ~HMIFLAG_WIN;
 				
 				self->switchBack(self, HMI_ATT_KEEP);
+
 				
 			} else {
 
