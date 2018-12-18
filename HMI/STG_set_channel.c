@@ -569,10 +569,12 @@ static void Cns_update_content(int op, int weight)
 			p_md->modify_str_conf(p_md, AUX_UNIT, arr_p_vram[p_syf->f_row], op, weight);
 			break;
 		case row_low_limit:		//下限
-			p_md->modify_str_conf(p_md, chnaux_lower_limit, arr_p_vram[p_syf->f_row], op, weight);
+			if(p_run->tmp_info[p_run->cur_chn].signal_type > AI_Cu50)
+				p_md->modify_str_conf(p_md, chnaux_lower_limit, arr_p_vram[p_syf->f_row], op, weight);
 			break;
 		case row_upper_limit:		//上限
-			p_md->modify_str_conf(p_md, chnaux_upper_limit, arr_p_vram[p_syf->f_row], op, weight);
+			if(p_run->tmp_info[p_run->cur_chn].signal_type > AI_Cu50)
+				p_md->modify_str_conf(p_md, chnaux_upper_limit, arr_p_vram[p_syf->f_row], op, weight);
 			break;
 		case row_MB:		//记录容量
 //			p_md->modify_str_conf(p_md, chnaux_record_mb, arr_p_vram[p_syf->f_row], op, weight);

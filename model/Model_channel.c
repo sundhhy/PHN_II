@@ -23,20 +23,20 @@
 
 //以下的数值都是一位小数点
 const int16_t	def_lower_up_limit[14][2] = {
-	{250,1820},			//B
-	{-148,1000},		//E
-	{-148,1200},		//J
-	{-148,1370},		//K
-	{-500,1760},			//S
-	{-400,4000},		//T
-	{-999,8500},		//pt100
+{-2500,18200},			//B
+	{-2000,10000},		//E
+	{-2100,12000},		//J
+	{-2000,13720},		//K
+	{-500,17681},			//S
+	{-1000,4000},		//T
+	{-2000,8500},		//pt100
 	{-500,1500},		//Cu50	
-	{0,10000},			//0 - 20 mv
-	{0,10000},			//0 - 10 mv
-	{0,10000},			//0 - 5V
-	{0,10000},			//1 - 5V
 	{0,10000},			//0 - 10mA
 	{0,10000},			//4 - 20mA
+	{0,10000},			//0 - 5V
+	{0,10000},			//1 - 5V
+	{0,10000},			//0 - 20 mv
+	{0,10000},			//0 - 100 mv
 		
 };
 const int16_t	lower_up_range[14][2] = {
@@ -48,12 +48,12 @@ const int16_t	lower_up_range[14][2] = {
 	{-1000,4000},		//T
 	{-2000,8500},		//pt100
 	{-500,1500},		//Cu50	
-	{-30000,30000},			//0 - 20 mv
-	{-30000,30000},			//0 - 10 mv
-	{-30000,30000},			//0 - 5V
-	{-30000,30000},			//1 - 5V
 	{-30000,30000},			//0 - 10mA
 	{-30000,30000},			//4 - 20mA
+	{-30000,30000},			//0 - 5V
+	{-30000,30000},			//1 - 5V
+	{-30000,30000},			//0 - 20 mv
+	{-30000,30000},			//0 - 100 mv
 		
 };
 
@@ -66,12 +66,13 @@ const uint8_t	def_decimal_places[14] = {
 	1,		//T
 	1,		//pt100
 	1,		//Cu50	
-	1,			//0 - 20 mv
-	1,			//0 - 10 mv
-	1,			//0 - 5V
-	1,			//1 - 5V
 	1,			//0 - 10mA
 	1,			//4 - 20mA
+	1,			//0 - 5V
+	1,			//1 - 5V
+	1,			//0 - 20 mv
+	1,			//0 - 10 mv
+
 		
 };
 
@@ -301,8 +302,21 @@ int MdlChn_Commit_conf(int chn_num)
 			self->setMdlData(self, AUX_UNIT, &p_info->unit);
 		if(p_info->tag_NO != p_mdl->chni.tag_NO)
 			self->setMdlData(self, chnaux_tag_NO, &p_info->tag_NO);
-		if(p_info->signal_type != p_mdl->chni.signal_type)		
+		if((p_info->signal_type != p_mdl->chni.signal_type)		||
+				(p_info->lower_limit != p_mdl->chni.lower_limit)	||
+				(p_info->upper_limit != p_mdl->chni.upper_limit))
+		{
+			p_mdl->chni.upper_limit = p_info->upper_limit;
+			p_mdl->chni.lower_limit = p_info->lower_limit;
+
 			self->setMdlData(self, AUX_SIGNALTYPE, &p_info->signal_type);
+		}
+		//设置信号类型的时候，会把上下限也一起发送下去的
+//		if(p_info->lower_limit != p_mdl->chni.lower_limit)		
+//			self->setMdlData(self, chnaux_lower_limit, &p_info->lower_limit);
+//		if(p_info->upper_limit != p_mdl->chni.upper_limit)
+//			self->setMdlData(self, chnaux_upper_limit, &p_info->upper_limit);
+		
 		if(p_info->MB != p_mdl->chni.MB)
 		{
 			self->setMdlData(self, chnaux_record_mb, &p_info->MB);
@@ -310,10 +324,7 @@ int MdlChn_Commit_conf(int chn_num)
 		}
 		if(p_info->filter_time_s != p_mdl->chni.filter_time_s)
 			self->setMdlData(self, chnaux_filter_ts, &p_info->filter_time_s);
-		if(p_info->lower_limit != p_mdl->chni.lower_limit)		
-			self->setMdlData(self, chnaux_lower_limit, &p_info->lower_limit);
-		if(p_info->upper_limit != p_mdl->chni.upper_limit)
-			self->setMdlData(self, chnaux_upper_limit, &p_info->upper_limit);
+		
 		if(p_info->small_signal != p_mdl->chni.small_signal)
 			self->setMdlData(self, chnaux_small_signal, &p_info->small_signal);
 		if(p_info->k != p_mdl->chni.k)		
@@ -757,6 +768,8 @@ static int MdlChn_init(Model *self, IN void *arg)
 	
 	MdlChn_Init_alm_mgr_by_STG_alm(cthis);
 	cthis->chni.decimal_places = def_decimal_places[cthis->chni.signal_type];
+	
+	self->self_check(self);		//1812 从背板获取上下限信息
 
 	stg->open_file(STG_CHN_DATA(cthis->chni.chn_NO), cthis->chni.MB * 1024 * 1024);
 	return RET_OK;
@@ -907,12 +920,12 @@ static int MdlChn_self_check( Model *self)
 //	}
 	
 	//todo：这段代码受到IOM模块的数据结构定义影响
-	cthis->chni.upper_limit = tmp_u16[0];
+//	cthis->chni.upper_limit = tmp_u16[0];
+//	
+//	
+//	cthis->chni.lower_limit = tmp_u16[1];
 	
-	
-	cthis->chni.lower_limit = tmp_u16[1];
-	
-	cthis->chni.decimal = 1;		//目前的smartbus的 工程值小数点只有1位
+//	cthis->chni.decimal = 1;		//目前的smartbus的 工程值小数点只有1位
 	return RET_OK;
 	err:
 		return ret;
@@ -1341,7 +1354,10 @@ static int MdlChn_setData(  Model *self, IN int aux, void *arg)
 		
 		case AUX_SIGNALTYPE:
 			if(arg)
+			{
 				p_u8 = (uint8_t *)arg;
+				cthis->chni.signal_type = *p_u8;
+			}
 			else
 //				break;
 				p_u8 = &cthis->chni.signal_type;
@@ -1353,12 +1369,11 @@ static int MdlChn_setData(  Model *self, IN int aux, void *arg)
 			sb_conf.decimal = cthis->chni.decimal;
 			
 			
-			cthis->chni.lower_limit = MdlChn_Get_def_lower_limit(sb_conf.signal_type);
-			cthis->chni.upper_limit = MdlChn_Get_def_up_limit(sb_conf.signal_type);
-		
-			//180113 smart bus的组态命令中对上下限的设置是无效的，因此填充0即可
-			sb_conf.lower_limit = 0;
-			sb_conf.upper_limit = 0;
+//			cthis->chni.lower_limit = MdlChn_Get_def_lower_limit(sb_conf.signal_type);
+//			cthis->chni.upper_limit = MdlChn_Get_def_up_limit(sb_conf.signal_type);
+
+			sb_conf.lower_limit = cthis->chni.lower_limit;
+			sb_conf.upper_limit = cthis->chni.upper_limit;
 			i = SmBus_AI_config(cthis->chni.chn_NO, &sb_conf, sbub_buf, 32);
 			if( I_uart3->write(I_uart3, sbub_buf, i) != RET_OK)
 				return ERR_OPT_FAILED;
@@ -1370,22 +1385,14 @@ static int MdlChn_setData(  Model *self, IN int aux, void *arg)
 			if(tmp_u8 != cthis->chni.chn_NO)
 				return ERR_OPT_FAILED;
 			//回读检查
-			
-//			i = SmBus_rd_signal_type(SMBUS_MAKE_CHN(SMBUS_CHN_AI, cthis->chni.chn_NO), sbub_buf, 32);
-//			if( I_uart3->write(I_uart3, sbub_buf, i) != RET_OK)
+
+			//1812 回读检查不需要了
+//			self->getMdlData(self, AUX_SIGNALTYPE, &tmp_u8);
+//			if(sb_conf.signal_type != tmp_u8)
+//			{
+//				
 //				return ERR_OPT_FAILED;
-//			i = I_uart3->read(I_uart3, sbub_buf, 32);
-//			if(i <= 0)
-//				return ERR_OPT_FAILED;
-//			if(SmBus_decode(SMBUS_CMD_READ, sbub_buf, &tmp_u8, 1) != RET_OK)
-//				return ERR_OPT_FAILED;
-			
-			self->getMdlData(self, AUX_SIGNALTYPE, &tmp_u8);
-			if(sb_conf.signal_type != tmp_u8)
-			{
-				
-				return ERR_OPT_FAILED;
-			}
+//			}
 			
 			return RET_OK;
 			

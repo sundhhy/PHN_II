@@ -86,12 +86,13 @@ typedef enum {
 	AI_T,
 	AI_Pt100,
 	AI_Cu50,
-	AI_0_10_mA,
-	AI_4_20_mA,
-	AI_0_5_V,
-	AI_1_5_V,
 	AI_0_20_mV,
 	AI_0_100_mV,
+
+	AI_0_5_V,
+	AI_1_5_V,
+	AI_0_10_mA,
+	AI_4_20_mA,
 	
 	
 //	AI_0_400_ohm,
