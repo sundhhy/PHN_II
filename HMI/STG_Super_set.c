@@ -4,6 +4,8 @@
 #include "system.h"
 #include <string.h>
 #include "utils/log.h"
+#include "utils/Storage.h"
+
 //============================================================================//
 //            G L O B A L   D E F I N I T I O N S                             //
 //============================================================================//
@@ -58,9 +60,10 @@ strategy_t	g_stg_super = {
 // const defines
 //------------------------------------------------------------------------------
 enum {
-	row_set_super_psd,
+//	row_set_super_psd,
 	num_row_chn,
 	row_stg_alarm,
+	
 	num_row
 	
 	
@@ -81,12 +84,13 @@ typedef struct {
 	
 	uint32_t	storage_alarm;	
 	char			tip_buf[32];
+//	int				num_chn_change;
 }suprt_run_t;
 //------------------------------------------------------------------------------
 // local vars
 //------------------------------------------------------------------------------
 
- static char *const arr_p_sys_entry[num_row] = {"超级密码", "通道数目","剩余不足报警"};
+ static char *const arr_p_sys_entry[num_row] = {"通道数目","剩余不足报警"};
  
 #define STG_P_RUN		(suprt_run_t *)arr_p_vram[STG_RUN_VRAM_NUM];
 #define INIT_RUN_RAM do { \
@@ -128,9 +132,9 @@ static int SPR_Entry(int row, int col, void *pp_text)
 		
 		switch(row) {
 			
-			case row_set_super_psd:
-				Print_sys_param(p_run->super_psd, arr_p_vram[row], 48, es_psd);
-				break;
+//			case row_set_super_psd:
+//				Print_sys_param(p_run->super_psd, arr_p_vram[row], 48, es_psd);
+//				break;
 			case num_row_chn:
 				sprintf(arr_p_vram[row], "%d", p_run->tmp_num_channel);
 				break;
@@ -219,16 +223,61 @@ static int SPR_key_up(void *arg)
  {
 	 
 	 suprt_run_t	*p_run = (suprt_run_t *)arr_p_vram[STG_RUN_VRAM_NUM];
+	 int i;
+	 int	new_size;
 	 if(btn_id == BTN_TYPE_SAVE)
 	 {
 		//保存超级设置
 		Clone_psd(p_run->super_psd, phn_sys.sys_conf.super_psd);
+		 
+		 
+		if(phn_sys.sys_conf.num_chn != p_run->tmp_num_channel)
+		{
+			//sundh 1812
+			//通道重新分配记录空间
+			
+			SYS_Reset(1, p_run->tmp_num_channel);
+//			p_run->num_chn_change = 1;
+			
+//			//删除原来的记录文件
+//			for(i = 0; i < phn_sys.sys_conf.num_chn; i++)
+//			{
+//				
+//					STG_Delete_file(STG_CHN_DATA(i));
+//				
+//			}
+//			
+//			//一定要在文件被删除之后调用，确保在擦除整个存储器时，不会有其他线程对存储器进行操作
+//			STG_Erase_recode_stg();
+
+//			
+//			//按新的通道数量计算新的容量
+//			new_size = STG_Equally_recode_stg(p_run->tmp_num_channel);
+//			
+//			//新建记录文件
+//			for(i = 0; i < p_run->tmp_num_channel; i++)
+//			{
+//				
+//					STG_Create_file(STG_CHN_DATA(i), new_size);
+//			}
+
+
+			sprintf(p_run->tip_buf,"擦除完成后重启！");
+			
+		}
+		else
+		{
+			sprintf(p_run->tip_buf,"操作成功");
+//						p_run->num_chn_change = 0;
+
+		}
 		phn_sys.sys_conf.num_chn = p_run->tmp_num_channel;
+		 
 		phn_sys.sys_conf.storage_alarm = p_run->storage_alarm; 
 		 
 		SYS_Commit();		//保存到flash
 		 
-		sprintf(p_run->tip_buf,"系统设置写入成功");
+//		sprintf(p_run->tip_buf,"擦除完成后重启!");
 		Win_content(p_run->tip_buf);
 		STG_SELF.cmd_hdl(STG_SELF.p_cmd_rcv, sycmd_win_tips, NULL);
 			
@@ -347,15 +396,15 @@ static int SPR_commit(void *arg)
 	
 	
 	
-	switch(p_syf->f_row) {
-	
-		case row_set_super_psd:
-			Str_set_password(arr_p_vram[p_syf->f_row], p_run->super_psd);
-			break;
-	
-	
-	
-	}
+//	switch(p_syf->f_row) {
+//	
+//		case row_set_super_psd:
+//			Str_set_password(arr_p_vram[p_syf->f_row], p_run->super_psd);
+//			break;
+//	
+//	
+//	
+//	}
 
 //	
 	
@@ -390,10 +439,10 @@ static int SPR_update_content(int op, int weight)
 	
 	switch(p_syf->f_row) {
 	
-		case row_set_super_psd:
-			STG_SELF.cmd_hdl(STG_SELF.p_cmd_rcv, sycmd_win_psd, arr_p_vram[p_syf->f_row]);
-			ret = 1;
-			break;
+//		case row_set_super_psd:
+//			STG_SELF.cmd_hdl(STG_SELF.p_cmd_rcv, sycmd_win_psd, arr_p_vram[p_syf->f_row]);
+//			ret = 1;
+//			break;
 		case num_row_chn:		
 			p_run->tmp_num_channel = Operate_in_range(p_run->tmp_num_channel, op, 1,1, NUM_CHANNEL);
 			sprintf(arr_p_vram[p_syf->f_row], "%d", p_run->tmp_num_channel);

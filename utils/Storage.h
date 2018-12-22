@@ -47,7 +47,7 @@
 #define STG_MAX_NUM_LST_PWR				24
 
 #define STG_LOG_FILE_SIZE					3600		//FM25L64的剩余部分全部用于存储日志		
-
+#define STG_RECORD_MB							16			//历史记录的存储器容量
 //------------------------------------------------------------------------------
 // typedef
 //------------------------------------------------------------------------------
@@ -149,9 +149,16 @@ int	STG_Set_alm_pwr_num(uint8_t	chn_pwr, uint16_t new_num);
 
 int	STG_Set_file_position(uint8_t	file_type, uint8_t rd_or_wr, int position);
 void STG_Erase_file(uint8_t	file_type);
+
+//sundh 1812 通道间平分存储空间而增加的接口
+//void STG_Delete_file(uint8_t	file_type);
+//void STG_Erase_recode_stg(void);		//一次性擦除记录存储器，避免有些空洞不能被擦除
+int	STG_Equally_recode_stg(int num_chn);  //计算每个通道的平均容量，按扇区对齐
+//void STG_Create_file(uint8_t	file_type, int size);
+
 void STG_Resize(uint8_t	file_type, uint32_t	new_size);
 
 void STG_Run(void);
-void STG_Reset(void);
+void STG_Reset(int num_chn);
 
 #endif

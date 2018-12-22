@@ -585,7 +585,8 @@ static void Cns_update_content(int op, int weight)
 			p_md->modify_str_conf(p_md, chnaux_filter_ts, arr_p_vram[p_syf->f_row], op, weight);
 			break;
 		case row_small_signal:		//小信号切除
-			p_md->modify_str_conf(p_md, chnaux_small_signal, arr_p_vram[p_syf->f_row], op, weight);
+		//sundh 1812  小信号切除不允许设置
+		//			p_md->modify_str_conf(p_md, chnaux_small_signal, arr_p_vram[p_syf->f_row], op, weight);
 			break;
 		case row_k:		//零点调整
 			p_md->modify_str_conf(p_md, chnaux_k, arr_p_vram[p_syf->f_row], op, weight);

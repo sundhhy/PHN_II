@@ -116,8 +116,7 @@ int	SmBus_RD_low_limit(IN uint8_t chn, OUT uint8_t *frame_buf, int buf_size);
 int SmBus_Set_cold_tmpr(IN uint8_t clt, OUT uint8_t *frame_buf, int buf_size);		//设置冷端温度
 
 //todo： 用不着了，通过实时值读取的时候能返回断偶或断阻状态了
-int SmBus_Is_duanou(IN uint8_t chn, OUT uint8_t *frame_buf, int buf_size);
-int SmBus_Is_duanzu(IN uint8_t chn, OUT uint8_t *frame_buf, int buf_size);
+
 
 #endif
 //------------ End of file ---------------------------

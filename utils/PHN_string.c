@@ -257,7 +257,8 @@ void Str_set_sys_param(void *p, char	*p_s, int aux, int op, int val)
 			break;
 		case es_mdfy_prm:
 		
-			p_cfg->disable_modify_adjust_paramter = Operate_in_range(p_cfg->disable_modify_adjust_paramter, op, val, 0, 1);
+//			p_cfg->disable_modify_adjust_paramter = Operate_in_range(p_cfg->disable_modify_adjust_paramter, op, val, 0, 1);
+			p_cfg->disable_modify_adjust_paramter = 0;
 			Disable_string(p_s, p_cfg->disable_modify_adjust_paramter );
 			break;
 		case es_cold_end_way:
@@ -490,7 +491,10 @@ void Print_float(int data, short int_len, short prec, char *str)
 //		else if(int_len == 4)
 //			sprintf(str, "%2d.%d", d1, d2);
 //		else
-		if(prec)
+		
+		if(prec == 2)
+			sprintf(str, "%d.%02d", d1, d2);
+		else if(prec > 0)
 			sprintf(str, "%d.%d", d1, d2);
 		else
 			sprintf(str, "%d", data);
@@ -502,7 +506,9 @@ void Print_float(int data, short int_len, short prec, char *str)
 //		else if(int_len == 4)
 //			sprintf(str, "-%2d.%d", d1, d2);
 //		else
-		if(prec)
+		if(prec == 2)
+			sprintf(str, "-%d.%02d", d1, d2);
+		else if(prec > 0)
 			sprintf(str, "-%d.%d", d1, d2);
 		else
 			sprintf(str, "-%d", data);

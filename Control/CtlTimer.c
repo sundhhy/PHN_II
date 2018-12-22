@@ -45,7 +45,7 @@
 //------------------------------------------------------------------------------
 // local vars
 //------------------------------------------------------------------------------
-
+static CtlTimer *p_ctl_time;
 static uint8_t	chn_smp_time[8];			//每个通道的采集时间分配
 static uint32_t	las_sys_sec = 0;
 //------------------------------------------------------------------------------
@@ -59,15 +59,27 @@ static void Ctime_periodic (void const *arg);
 static osTimerId ctime_id;                                           // timer id
 static osTimerDef (ctime, Ctime_periodic);
 void Ctime_Allco_time(uint16_t  all_time, uint8_t need);
+static void CTM_Destory(Controller *self);
 //============================================================================//
 //            P U B L I C   F U N C T I O N S                                 //
 //============================================================================//
-
+CtlTimer *Get_ctl_time(void)
+{
+	if( p_ctl_time == NULL)
+	{
+		p_ctl_time = CtlTimer_new();
+		if(p_ctl_time == NULL) while(1);
+		
+	}
+	return p_ctl_time;
+}
 
 
 CTOR( CtlTimer)
 SUPER_CTOR( Controller);
 FUNCTION_SETTING( Controller.init, Init_ctime);
+FUNCTION_SETTING( Controller.destory, CTM_Destory);
+
 END_CTOR
 //=========================================================================//
 //                                                                         //
@@ -107,6 +119,16 @@ static void Init_ctime( Controller *self, void *arg)
 	cthis->time_count = 0;
 	time_smp = 0;
 	
+}
+
+static void CTM_Destory(Controller *self)
+{
+	 osStatus status;
+	 status =	osTimerDelete(ctime_id);
+	  if (status != osOK)  {
+    // Timer could not be deleted
+			status = osOK;		//test
+		} 
 }
 
 //每秒执行一次

@@ -160,15 +160,16 @@ Storage		*Get_storage()
 	
 }
 
-void STG_Reset(void)
+void STG_Reset(int num_chn)
 {
 	int i;
+		
 	Storage				*stg = Get_storage();
 	HMI_TIP_ICO(TIP_ICO_WARING, 0);
-	for(i = 0; i < NUM_CHANNEL; i++)
+	for(i = 0; i < num_chn; i++)
 	{
 		//及时创建文件，避免各个文件因为分散创建，而导致擦除时被分散开，导致影响数据的存储
-		stg->open_file(STG_CHN_DATA(i), STG_DEF_FILE_SIZE);
+		stg->open_file(STG_CHN_DATA(i), MdlChn_get_rcd_file_size(i));
 		stg->arr_rcd_mgr[i].rcd_count = 0;
 	}
 	
@@ -399,8 +400,42 @@ void STG_Erase_file(uint8_t	file_type)
 	}
 	
 	STG_SYS.fs.fs_erase_file(fd, erase_addr[0] , erase_addr[1]);
+	stg->arr_rcd_mgr[chn_num].rcd_count = 0;
+}
+
+//void STG_Delete_file(uint8_t	file_type)
+//{
+//	Storage				*stg = Get_storage();
+//	int						fd = -1;
+//	uint32_t			erase_addr[2] = {0, 0};
+//	uint8_t				chn_num = STG_GET_CHN(file_type);
+//	
+//	
+//	fd = STG_Open_file(file_type, STG_DEF_FILE_SIZE);
+//	
+//	
+//	
+//	STG_SYS.fs.fs_delete(fd, NULL);
+//	stg->arr_rcd_mgr[chn_num].rcd_count = 0;
+//	
+//}
+//在修改了系统的通道数量时调用
+//一次性擦除记录存储器，避免在单独擦除记录文件时有些空洞不能被擦除
+//void STG_Erase_recode_stg(void)	
+//{
+
+
+//}	
+int	STG_Equally_recode_stg(int num_chn)  //计算每个通道的平均容量，按扇区对齐
+{
+	return STG_RECORD_MB / num_chn;
 	
 }
+//void STG_Create_file(uint8_t	file_type, int size)
+//{
+//	
+//	
+//}
 
 //报警和掉电的记录是存放在第一个记录上的
 uint16_t STG_Get_alm_pwr_num(uint8_t	chn_pwr)

@@ -31,6 +31,7 @@
 #define CHN_ERR_CMM			1 	//通信错误
 #define CHN_ERR_BREAK_COUPLE  2		//断偶
 #define CHN_ERR_BREAK_RESISTOR  4
+#define CHN_ERR_BREAK  					8
 //------------------------------------------------------------------------------
 // typedef
 //------------------------------------------------------------------------------
@@ -86,13 +87,14 @@ typedef enum {
 	AI_T,
 	AI_Pt100,
 	AI_Cu50,
-	AI_0_20_mV,
-	AI_0_100_mV,
+	AI_0_10_mA,
+	AI_4_20_mA,
+	
 
 	AI_0_5_V,
 	AI_1_5_V,
-	AI_0_10_mA,
-	AI_4_20_mA,
+	AI_0_20_mV,
+	AI_0_100_mV,
 	
 	
 //	AI_0_400_ohm,
@@ -139,13 +141,17 @@ typedef struct {
 	
 	*/
 
-	//K的小数点固定为2，B的小数点与采样信号类型的小数点一致
+	//K的小数点固定为2，B为1位小数点
 	short				k,b;				//18
 	/******************************************/
 	int16_t			value;					//20
 	uint16_t		sample_value;				//	22
 	uint8_t			smp_flag;				//23	0 采样值无效  1 采样值有效
 	uint8_t			decimal_places;		//只有测温的才是1位小时，其他都是整数
+	
+	int16_t			lfv;		//last filter value  上一次滤波值
+	int16_t			none;
+	
 }chn_info_t;
 
 typedef struct {
@@ -245,6 +251,8 @@ void MdlChn_Read_code_end_temperature();
 int	MdlChn_save_data(uint8_t chn_num, mdl_chn_save_t *p);		//把要存储的数据放入p，返回长度
 void MdlChn_default_conf(int chn_num);
 void MdlChn_default_alarm(int chn_num);
+void MdlChn_set_rcd_file_size(int chn_num, int size);
+uint32_t MdlChn_get_rcd_file_size(int chn_num);
 void MdlChn_Clean_Alamr(int chn_num);
 int MdlChn_Commit_conf(int chn_num);			//提交修改,会把通道的配置写入存储和发送给通道版
 uint8_t  MdlChn_Cal_prc( Model *self, int val);

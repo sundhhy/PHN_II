@@ -687,31 +687,48 @@ file_info_t		*EFS_file_info(int fd)
 	return efs_mgr.arr_dynamic_info + fd;
 }
 
-void 	EFS_Reset(void)
+void 	EFS_Reset(int thoroughly)
 {
 //	uint8_t		ver[2];
 	char			i;
 	
 	
 	efs_mgr.efs_flag |= EFS_BUSY;
-	
-//	for(i = 1; i < NUM_FSH; i ++)		//文件管理部分时不能擦除的
+//	if(thoroughly)
 //	{
-//		EFS_FSH(i).fsh_ersse(FSH_OPT_CHIP, 0);
+//		//彻底重置文件系统
+////		for(i = 1; i < NUM_FSH; i ++)		
+////		{
+////			EFS_FSH(i).fsh_ersse(FSH_OPT_CHIP, 0);
+////			
+////		}
 //		
+//		for(i = 0; i < EFS_MAX_NUM_FILES; i++)
+//		{
+//				EFS_delete(i, NULL);
+//				EFS_flush_mgr(i);		
+//		}
+//	
+//	
 //	}
-	for(i = 0; i < EFS_MAX_NUM_FILES; i++)
+//	else
 	{
-		//擦除所有已经建立的文件
-		if(((efs_mgr.arr_static_info[i].efs_flag & EFILE_LOG) == 0) && (efs_mgr.arr_static_info[i].efs_flag & EFILE_USED))
+		
+		for(i = 0; i < EFS_MAX_NUM_FILES; i++)
 		{
-			EFS_delete(i, NULL);
-//			EFS_Erase_file(i, 0, 0);
-			EFS_flush_mgr(i);		
+			//擦除所有已经建立的文件
+	//		if(((efs_mgr.arr_static_info[i].efs_flag & EFILE_LOG) == 0) && (efs_mgr.arr_static_info[i].efs_flag & EFILE_USED))
+			if((efs_mgr.arr_static_info[i].efs_flag & EFILE_LOG) == 0)
+			{
+				EFS_delete(i, NULL);
+	//			EFS_Erase_file(i, 0, 0);
+				EFS_flush_mgr(i);		
+			}
+			
 		}
 		
-	}
 
+	}
 	efs_mgr.efs_flag &= ~EFS_BUSY;	
 	
 //	
@@ -866,7 +883,7 @@ static void EFS_run()
 //				Set_bit(set_done, i);
 			f->file_flag &=~ EFILE_ERASE;
 			efs_mgr.arr_static_info[i].efile_wr_position = 0;
-				
+			EFS_flush_mgr(i);	
 				
 		}
 		

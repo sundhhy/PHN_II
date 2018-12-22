@@ -71,7 +71,7 @@ const uint8_t	def_decimal_places[14] = {
 	1,			//0 - 5V
 	1,			//1 - 5V
 	1,			//0 - 20 mv
-	1,			//0 - 10 mv
+	1,			//0 - 100 mv
 
 		
 };
@@ -127,6 +127,7 @@ static void MdlChn_Save_2_conf(mdl_chn_save_t *p_mcs, chn_info_t *p_cnf, uint8_t
 static void MdlChn_Save_2_alarm(mdl_chn_save_t *p_mcs, chn_alarm_t *p_alr, uint8_t direct);
 
 static	int16_t Zero_shift_K_B(chn_info_t *p, int16_t	d);
+static	int16_t  Filter_value(short SampleValue,short VorFilterValue,unsigned char FilterTime);
 static	int16_t Cut_small_signal(chn_info_t *p, int16_t	d);
 static 	int16_t	MdlChn_Get_def_lower_limit(uint8_t t);
 static 	int16_t	MdlChn_Get_def_up_limit(uint8_t t);
@@ -234,12 +235,14 @@ void MdlChn_default_conf(int chn_num)
 	p_mdl->chni.unit = eu_V;
 	p_mdl->chni.chn_NO = chn_num;
 	p_mdl->chni.tag_NO = chn_num;
-	p_mdl->chni.MB = 2;
+	p_mdl->chni.MB = STG_RECORD_MB / phn_sys.sys_conf.num_chn;
 	p_mdl->chni.k = 100;
 	p_mdl->chni.b = 0;
 	p_mdl->chni.lower_limit = MdlChn_Get_def_lower_limit(p_mdl->chni.signal_type);
 	p_mdl->chni.upper_limit = MdlChn_Get_def_up_limit(p_mdl->chni.signal_type);
 	p_mdl->chni.decimal_places = def_decimal_places[p_mdl->chni.signal_type];
+	
+	
 }
 
 
@@ -248,10 +251,28 @@ void MdlChn_default_alarm(int chn_num)
 	Model_chn *p_mdl= Get_Mode_chn(chn_num);
 	
 	memset(&p_mdl->alarm, 0, sizeof(p_mdl->alarm));
-	p_mdl->alarm.alarm_hh = 0x7fff;
-	p_mdl->alarm.alarm_hi = 0x7fff;
+	p_mdl->alarm.alarm_hh = p_mdl->chni.upper_limit;
+	p_mdl->alarm.alarm_hi = p_mdl->chni.upper_limit;
+	p_mdl->alarm.alarm_lo = p_mdl->chni.lower_limit;
+	p_mdl->alarm.alarm_ll = p_mdl->chni.lower_limit;
 	
 	
+}
+
+void MdlChn_set_rcd_file_size(int chn_num, int size)
+{
+	Model_chn *p_mdl= Get_Mode_chn(chn_num);
+	p_mdl->chni.MB = size;
+	
+	
+	
+}
+
+uint32_t MdlChn_get_rcd_file_size(int chn_num)
+{
+	
+	Model_chn *p_mdl= Get_Mode_chn(chn_num);
+	return p_mdl->chni.MB * 1024 * 1024;
 }
 
 void MCH_Cancle_all_alarm(uint8_t chn)
@@ -317,11 +338,12 @@ int MdlChn_Commit_conf(int chn_num)
 //		if(p_info->upper_limit != p_mdl->chni.upper_limit)
 //			self->setMdlData(self, chnaux_upper_limit, &p_info->upper_limit);
 		
-		if(p_info->MB != p_mdl->chni.MB)
-		{
-			self->setMdlData(self, chnaux_record_mb, &p_info->MB);
-			STG_Resize(STG_CHN_DATA(chn_num), p_mdl->chni.MB * 1024 * 1024);
-		}
+		//sundh 1812  不允许自由设置存储容量，一律自动平均分配
+//		if(p_info->MB != p_mdl->chni.MB)
+//		{
+//			self->setMdlData(self, chnaux_record_mb, &p_info->MB);
+//			STG_Resize(STG_CHN_DATA(chn_num), p_mdl->chni.MB * 1024 * 1024);
+//		}
 		if(p_info->filter_time_s != p_mdl->chni.filter_time_s)
 			self->setMdlData(self, chnaux_filter_ts, &p_info->filter_time_s);
 		
@@ -598,9 +620,10 @@ static void Signal_Alarm(Model_chn *cthis)
 
 	flag = p_alm->alm_flag;
 	
-	temps4 = p_alm->alarm_backlash * 0x10000;
-	bjhc = temps4 / 1000;
-	prc_data = Percent_to_data(p, bjhc, 2);	
+//	temps4 = p_alm->alarm_backlash * 10000;
+//	bjhc = temps4 / 1000;
+	bjhc = p_alm->alarm_backlash;
+	prc_data = Percent_to_data(p, bjhc, 1);	
 	
 	tempS2 = p_alm->alarm_ll;				//低低报时加上回差
 	if(flag & ALM_LL)
@@ -679,6 +702,13 @@ static void Signal_Alarm(Model_chn *cthis)
 	p_alm->alm_flag = new_flag;
 }
 
+static	int16_t  Filter_value(short SampleValue,short VorFilterValue,unsigned char FilterTime)
+{
+  return((SampleValue+ VorFilterValue*FilterTime)/(1+FilterTime));
+	 
+}
+
+
 static	int16_t Zero_shift_K_B(chn_info_t *p, int16_t	d)
 {
 	int32_t	tmp_s32;
@@ -687,8 +717,11 @@ static	int16_t Zero_shift_K_B(chn_info_t *p, int16_t	d)
 //	if(p->k == 0)
 //		goto exit;
 	
-	//k是2位小数,b是整数
-	tmp_s32 = p->k*(long)d/100 + p->b;
+	//k是2位小数,b是1位小数
+	tmp_s32 = p->k*(long)d/100;
+	tmp_s32 = tmp_s32 + p->b;			//而且数值本身也是1位小数,因此就不必进行放大了
+
+	
 	if( tmp_s32 > p->upper_limit) 	
 		tmp_s32 = p->upper_limit;
 	
@@ -706,17 +739,17 @@ static	int16_t Cut_small_signal(chn_info_t *p, int16_t	d)
 	
 	int32_t	tmp_s32;
 	int16_t 	rst = d;
-	
-	if(p->small_signal == 0)
-		goto exit;
-	
-	//small_signal 是1位小数的百分数
-	tmp_s32 = p->upper_limit - p->lower_limit;
-	tmp_s32 = tmp_s32 * p->small_signal / 1000;
-	if(rst < tmp_s32)
-		rst = p->lower_limit;
-	
-	exit:
+	//sundh 1812  去除小信号切除功能
+//	if(p->small_signal == 0)
+//		goto exit;
+//	
+//	//small_signal 是1位小数的百分数
+//	tmp_s32 = p->upper_limit - p->lower_limit;
+//	tmp_s32 = tmp_s32 * p->small_signal / 1000;
+//	if(rst < tmp_s32)
+//		rst = p->lower_limit;
+//	
+//	exit:
 	return rst;
 }
 
@@ -739,6 +772,7 @@ static int MdlChn_init(Model *self, IN void *arg)
 	cthis->unit_buf = CALLOC(1,8);
 	cthis->alarm_buf = CALLOC(1,8);
 	cthis->status_buf = CALLOC(1,8);
+	cthis->chni.lfv = 0;
 
 	self->mdl_id = MDLID_CHN(chn_num);
 	cthis->chni.chn_NO = chn_num;
@@ -764,6 +798,9 @@ static int MdlChn_init(Model *self, IN void *arg)
 		stg->wr_stored_data(stg, STG_CHN_CONF(cthis->chni.chn_NO), NULL, 0);
 		
 	}
+	
+	//sundh 1812 去除小信号切除功能
+	cthis->chni.small_signal = 0;
 	
 	
 	MdlChn_Init_alm_mgr_by_STG_alm(cthis);
@@ -947,6 +984,7 @@ static void MdlChn_run(Model *self)
 	
 #if TEST_SIMU_DATA == 1
 	uint16_t		*p_u16;
+	static  short				step = 1;
 	p_u16 = (uint16_t *)&cthis->chni.value;
 	
 	
@@ -954,18 +992,38 @@ static void MdlChn_run(Model *self)
 	cthis->chni.upper_limit = 100;
 	//decimal_places 在这里用于测试
 
-	cthis->alarm.alarm_hh = cthis->chni.upper_limit / 2;
-	cthis->alarm.alarm_hi = cthis->chni.upper_limit / 3;
+//	cthis->alarm.alarm_hh = cthis->chni.upper_limit / 2;
+//	cthis->alarm.alarm_hi = cthis->chni.upper_limit / 3;
+//	
+//	cthis->alarm.alarm_lo = cthis->chni.lower_limit /5;
+//	cthis->alarm.alarm_ll = cthis->chni.lower_limit /10;
 	
-	cthis->alarm.alarm_lo = cthis->chni.lower_limit /5;
-	cthis->alarm.alarm_ll = cthis->chni.lower_limit /10;
+	cthis->alarm.alarm_hh = 80;
+	cthis->alarm.alarm_hi = 60;
 	
-	*p_u16 += 1;
-	if(*p_u16 > cthis->chni.upper_limit)
-		*p_u16 = cthis->chni.lower_limit;
+	cthis->alarm.alarm_lo = 40;
+	cthis->alarm.alarm_ll = 20;
+	
+	if(*p_u16 >= cthis->chni.upper_limit)
+	{
+		step = -1;
+		
+	}
+	else if(*p_u16 <= cthis->chni.lower_limit)
+	{
+		step = 1;
+		
+	}
+//	if(step > 0)
+		*p_u16 += step;
+//	else
+//		*p_u16 -= 1;
+//		*p_u16 = cthis->chni.lower_limit;
 	
 	*p_u16 = Zero_shift_K_B(&cthis->chni, *p_u16);
-	*p_u16 = Cut_small_signal(&cthis->chni, *p_u16);
+//	*p_u16 = Cut_small_signal(&cthis->chni, *p_u16);
+	*p_u16  = Filter_value(*p_u16, cthis->chni.lfv, cthis->chni.filter_time_s);
+	cthis->chni.lfv = *p_u16;
 	
 	Signal_Alarm(cthis);
 	
@@ -998,8 +1056,8 @@ static void MdlChn_run(Model *self)
 //	
 //	//读取采样值
 	rd_smpval:
-	if(phn_sys.sys_flag & SYSFLAG_CHN_ERR)
-		return;
+	if(phn_sys.sys_flag & SYSFLAG_CHN_ERR)		//让每个通道独立判断
+		goto err;
 //	cthis->chni.smp_flag = 0;
 //	i = SmBus_AI_Read(cthis->chni.chn_NO, AI_READ_SMPVAL, chk_buf, 16);
 //	if( I_uart3->write(I_uart3, chk_buf, i) != RET_OK)
@@ -1014,61 +1072,6 @@ static void MdlChn_run(Model *self)
 	
 	//读取工程值
 //	rd_engval:	
-# if 0	
-	//信号类型是热电阻时，要进行断偶处理
-	//pt100或cu50要进行断阻处理
-	
-	if(cthis->chni.signal_type > AI_Cu50)
-		goto read_val;
-	
-	if(cthis->chni.signal_type < AI_Pt100)
-	{
-		duan_ou_zu_cmd = SMBUS_CMD_DUANOU;
-		i = SmBus_Is_duanou(cthis->chni.chn_NO, chk_buf, 16);
-	}
-	else
-	{
-		duan_ou_zu_cmd = SMBUS_CMD_DUANZU;
-		i = SmBus_Is_duanzu(cthis->chni.chn_NO, chk_buf, 16);
-	}
-	if( I_uart3->write(I_uart3, chk_buf, i) != RET_OK)
-		goto err;
-	i = I_uart3->read(I_uart3, chk_buf, 16);
-	if(i <= 0)
-	{
-		//读取数据无回复时，认为通道板未连接
-		phn_sys.sys_flag |= SYSFLAG_CHN_ERR;
-		HMI_TIP_ICO(TIP_ICO_ERR, 1);
-		goto err;
-	}
-	if(SmBus_decode(duan_ou_zu_cmd, chk_buf, &rst, sizeof(SmBus_result_t)) != RET_OK)
-		goto err;
-	
-	if(rst.val)
-	{
-		switch(phn_sys.sys_conf.break_couple)
-		{
-			case 0:		//始点
-				
-				rst.val = cthis->chni.lower_limit;
-				break;
-			case 1:
-				rst.val = cthis->chni.value;
-				break;
-			default:
-				rst.val = cthis->chni.upper_limit;
-				break;
-			
-			
-		}
-		
-		goto deal_val;
-		
-	}
-	
-	
-	read_val:
-#endif	
 	//test
 	i = SmBus_AI_Read(SMBUS_MAKE_CHN(SMBUS_CHN_AI, cthis->chni.chn_NO), AI_READ_ENGVAL, chk_buf, 16);
 	if( I_uart3->write(I_uart3, chk_buf, i) != RET_OK)
@@ -1085,6 +1088,8 @@ static void MdlChn_run(Model *self)
 	}
 	if(SmBus_decode(SMBUS_AI_READ, chk_buf, &rst, sizeof(SmBus_result_t)) != RET_OK)
 		goto err;
+	else
+		phn_sys.sys_flag &= ~SYSFLAG_CHN_ERR;
 	//信号类型是热电阻时，要进行断偶处理
 	//pt100或cu50要进行断阻处理
 	if(rst.break_flag == 0)
@@ -1092,6 +1097,8 @@ static void MdlChn_run(Model *self)
 		
 		cthis->chni.flag_err &= ~CHN_ERR_BREAK_COUPLE;
 		cthis->chni.flag_err &= ~CHN_ERR_BREAK_RESISTOR;
+		cthis->chni.flag_err &= ~CHN_ERR_BREAK;
+
 		
 	}	//if(rst.break_flag == 0)
 	else
@@ -1113,23 +1120,29 @@ static void MdlChn_run(Model *self)
 			}
 			
 			
-				switch(duan_ou_zu_cmd)
-				{
-					case 0:		//始点		
-						rst.val = cthis->chni.lower_limit;
-						break;
-					case 1:
-						rst.val = cthis->chni.value;
-						break;
-					default:
-						rst.val = cthis->chni.upper_limit;
-						break;
-					
-					
-				}
+			switch(duan_ou_zu_cmd)
+			{
+				case 0:		//始点		
+					rst.val = cthis->chni.lower_limit;
+					break;
+				case 1:
+					rst.val = cthis->chni.value;
+					goto deal_val;		//跳过K B线性化等操作
+				default:
+					rst.val = cthis->chni.upper_limit;
+					break;
+				
+				
+			}
 			
 			
 		}	//if(cthis->chni.signal_type <= AI_Cu50)
+		else
+		{
+			cthis->chni.flag_err |= CHN_ERR_BREAK;
+			rst.val = cthis->chni.value;
+			goto deal_val;		//跳过K B线性化等操作
+		}
 		
 	}
 
@@ -1140,12 +1153,14 @@ static void MdlChn_run(Model *self)
 	}
 	else
 	{
-		cthis->chni.flag_err = 0;
+		cthis->chni.flag_err &= ~CHN_ERR_CMM;
 	}
 	
 	rst.val = Zero_shift_K_B(&cthis->chni, rst.val);
-	rst.val = Cut_small_signal(&cthis->chni, rst.val);
-	
+//	rst.val = Cut_small_signal(&cthis->chni, rst.val);
+//	rst.val = Filter_value(rst.val, cthis->chni.lfv, cthis->chni.filter_time_s);
+	cthis->chni.lfv = rst.val;
+
 	//test
 //	if((rst.val < 5000) && (cthis->chni.chn_NO == 1))
 //	{
@@ -1350,6 +1365,9 @@ static int MdlChn_setData(  Model *self, IN int aux, void *arg)
 		
 		case chnaux_filter_ts:
 			cthis->chni.filter_time_s = *(uint8_t *)arg;
+			cthis->chni.value = Filter_value(cthis->chni.value, cthis->chni.lfv, cthis->chni.filter_time_s);
+			cthis->chni.lfv =cthis->chni.value;
+
 			break; 
 		
 		case AUX_SIGNALTYPE:
@@ -1485,6 +1503,8 @@ static int MdlChn_setData(  Model *self, IN int aux, void *arg)
 				break;
 			p_s16 = (int16_t *)arg;
 			cthis->chni.k = *p_s16;
+			
+			cthis->chni.value = Zero_shift_K_B(&cthis->chni, cthis->chni.value);
 			break;
 			
 		case chnaux_b:
@@ -1492,6 +1512,8 @@ static int MdlChn_setData(  Model *self, IN int aux, void *arg)
 				break;
 			p_s16 = (int16_t *)arg;
 			cthis->chni.b = *p_s16;
+			cthis->chni.value = Zero_shift_K_B(&cthis->chni, cthis->chni.value);
+
 			break;
 		case chnaux_small_signal:
 			if(arg == NULL)
@@ -1680,6 +1702,8 @@ static char* MdlChn_to_string( Model *self, IN int aux, void *arg)
 				sprintf(p, "断偶    ");
 			else if(cthis->chni.flag_err & CHN_ERR_BREAK_RESISTOR)
 				sprintf(p, "断阻    ");
+			else if(cthis->chni.flag_err & CHN_ERR_BREAK)
+				sprintf(p, "断线    ");
 			
 			return p;
 		case AUX_SIGNALTYPE:
@@ -1714,25 +1738,25 @@ static char* MdlChn_to_string( Model *self, IN int aux, void *arg)
 			break;
 		case chnaux_b:
 //			Print_frefix_float(p_info->b, 1, "B:", (char *)arg);
-//			Print_float(p_info->b, 1, (char *)arg);
-			sprintf(arg, "%-3d", p_info->b);
+			Print_float(p_info->b, 2, 1, (char *)arg);
+//			sprintf(arg, "%-3d", p_info->b);
 			break;	
 	
 		case alarm_hh:
-			sprintf(arg, "%-6d", p_alarm->alarm_hh);
-//			Print_float(p_alarm->alarm_hh, 1, (char *)arg);
+//			sprintf(arg, "%-6d", p_alarm->alarm_hh);
+			Print_float(p_alarm->alarm_hh, 5, 1, (char *)arg);
 			break;
 		case alarm_hi:
-			sprintf(arg, "%-6d", p_alarm->alarm_hi);
-//			Print_float(p_alarm->alarm_hi, 1, (char *)arg);
+//			sprintf(arg, "%-6d", p_alarm->alarm_hi);
+			Print_float(p_alarm->alarm_hi, 6, 1, (char *)arg);
 			break;
 		case alarm_lo:
-			sprintf(arg, "%-5d", p_alarm->alarm_lo);
-//			Print_float(p_alarm->alarm_lo, 1, (char *)arg);
+//			sprintf(arg, "%-5d", p_alarm->alarm_lo);
+			Print_float(p_alarm->alarm_lo, 6, 1, (char *)arg);
 			break;
 		case alarm_ll:
-			sprintf(arg, "%-5d", p_alarm->alarm_ll);
-//			Print_float(p_alarm->alarm_ll, 1, (char *)arg);
+//			sprintf(arg, "%-5d", p_alarm->alarm_ll);
+			Print_float(p_alarm->alarm_ll, 6, 1, (char *)arg);
 			break;
 		case tchspt_hh:
 			Print_touch_spot(p_alarm->touch_spot_hh, (char *)arg);
@@ -1748,6 +1772,7 @@ static char* MdlChn_to_string( Model *self, IN int aux, void *arg)
 			break;	
 		case alarm_backlash:
 			Print_float(p_alarm->alarm_backlash, 2, 1, (char *)arg);
+			strcat((char *)arg, "%");
 			break;
 		default:
 			break;
@@ -1817,57 +1842,60 @@ static int MdlChn_modify_sconf(Model *self, IN int aux, char *s, int op, int val
 			self->to_string(self, chnaux_upper_limit, s);
 			break;
 		case chnaux_small_signal:
-			p_info->small_signal = Operate_in_range(p_info->small_signal, op, val, 0, 100);
+			p_info->small_signal = Operate_in_range_keep(p_info->small_signal, op, val, 0, 100);
 			self->to_string(self, chnaux_small_signal, s);
 			break;
 		case chnaux_k:
-			p_info->k = Operate_in_range(p_info->k, op, val, -999, 999);
+			p_info->k = Operate_in_range_keep(p_info->k, op, val, -999, 999);
 			self->to_string(self, chnaux_k, s);
 			break;
 		case chnaux_b:
-			p_info->b = Operate_in_range(p_info->b, op, val, -999, 999);
+			p_info->b = Operate_in_range_keep(p_info->b, op, val, -999, 999);
 			self->to_string(self, chnaux_b, s);
 			break;
 		
 		case alarm_hh:
-			p_alarm->alarm_hh = Operate_in_range_keep(p_alarm->alarm_hh, op, val, 0, 0xffff);
+			p_alarm->alarm_hh = Operate_in_range_keep(p_alarm->alarm_hh, op, val, p_alarm->alarm_hi, cthis->chni.upper_limit);
 			self->to_string(self, aux, s);
 //			Print_float(p_alarm->alarm_hh, 1, s);
 			break;
 		case alarm_hi:
-			p_alarm->alarm_hi = Operate_in_range_keep(p_alarm->alarm_hi, op, val, 0, 0xffff);
+			p_alarm->alarm_hi = Operate_in_range_keep(p_alarm->alarm_hi, op, val, p_alarm->alarm_lo + 1, p_alarm->alarm_hh);
 //			Print_float(p_alarm->alarm_hi, 1, s);
 			self->to_string(self, aux, s);
 			break;
 		case alarm_lo:
-			p_alarm->alarm_lo = Operate_in_range_keep(p_alarm->alarm_lo, op, val, 0, 0xffff);
+			p_alarm->alarm_lo = Operate_in_range_keep(p_alarm->alarm_lo, op, val, p_alarm->alarm_ll, p_alarm->alarm_hi);
 //			Print_float(p_alarm->alarm_lo, 1, s);
 			self->to_string(self, aux, s);
 			break;
 		case alarm_ll:
-			p_alarm->alarm_ll = Operate_in_range_keep(p_alarm->alarm_ll, op, val, 0, 0xffff);
+			p_alarm->alarm_ll = Operate_in_range_keep(p_alarm->alarm_ll, op, val, cthis->chni.lower_limit, p_alarm->alarm_lo);
 //			Print_float(p_alarm->alarm_ll, 1, (char *)s);
 			self->to_string(self, aux, s);
 			break;
 		case tchspt_hh:
-			p_alarm->touch_spot_hh = Operate_in_range(p_alarm->touch_spot_hh, op, val, 1, MAX_TOUCHSPOT - 1);
+			p_alarm->touch_spot_hh = Operate_in_range(p_alarm->touch_spot_hh, op, val, 1, MAX_TOUCHSPOT);
 			Print_touch_spot(p_alarm->touch_spot_hh, (char *)s);
 			break;
 		case tchspt_hi:
-			p_alarm->touch_spot_hi = Operate_in_range(p_alarm->touch_spot_hi, op, val, 1, MAX_TOUCHSPOT - 1);
+			p_alarm->touch_spot_hi = Operate_in_range(p_alarm->touch_spot_hi, op, val, 1, MAX_TOUCHSPOT);
 			Print_touch_spot(p_alarm->touch_spot_hi, (char *)s);
 			break;
 		case tchspt_lo:
-			p_alarm->touch_spot_lo = Operate_in_range(p_alarm->touch_spot_lo, op, val, 1, MAX_TOUCHSPOT - 1);
+			p_alarm->touch_spot_lo = Operate_in_range(p_alarm->touch_spot_lo, op, val, 1, MAX_TOUCHSPOT);
 			Print_touch_spot(p_alarm->touch_spot_lo, (char *)s);	
 			break;
 		case tchspt_ll:
-			p_alarm->touch_spot_ll = Operate_in_range(p_alarm->touch_spot_ll, op, val, 1, MAX_TOUCHSPOT - 1);
+			p_alarm->touch_spot_ll = Operate_in_range(p_alarm->touch_spot_ll, op, val, 1, MAX_TOUCHSPOT);
 			Print_touch_spot(p_alarm->touch_spot_ll, (char *)s);	
 			break;	
 		case alarm_backlash:
 			p_alarm->alarm_backlash = Operate_in_range_keep(p_alarm->alarm_backlash, op, val, 0, 100);
 			Print_float(p_alarm->alarm_backlash, 2, 1, (char *)s);
+			strcat((char *)s, "%");
+
+			
 			break;
 		default:
 			

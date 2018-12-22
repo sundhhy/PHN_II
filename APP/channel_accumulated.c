@@ -83,7 +83,7 @@ int CNA_Init(void)
 	return RET_OK;
 }
 
-void CNA_default(void)
+void CNA_default(int num_chn)
 {
 	int 				i;
 	struct  tm			t;
@@ -184,39 +184,53 @@ void CNA_Run(int cyc_ms)
 		}
 		
 		p_mc = Get_Mode_chn(chn_num);
-		temp = p_mc->chni.value + arr_chn_acc[chn_num].accumlated_remain;
-		//根据单位，计算每秒的增量
 		
-		
-		
-		switch(p_mc->chni.unit)
+		//sundh 1812 
+		if(p_mc->chni.signal_type >= AI_0_20_mV)
 		{
-			case eu_Nm3_h:
-			case eu_m3_h:
-			case eu_L_h:
-			case eu_kg_h:
-				sum = temp / 3600;
-				arr_chn_acc[chn_num].accumlated_remain = temp % 3600;
-				break;
-			case eu_m3_min:
-			case eu_L_min:
-			case eu_kg_min:
-			case eu_r_min:
-				sum = temp / 60;
-				arr_chn_acc[chn_num].accumlated_remain = temp % 60;
-				break;
-			default:
-				sum = temp;
-				arr_chn_acc[chn_num].accumlated_remain = 0;
-				break;
+			
+			
+		
+		
+			temp = p_mc->chni.value + arr_chn_acc[chn_num].accumlated_remain;
+			//根据单位，计算每秒的增量
+			
+			
+			
+			switch(p_mc->chni.unit)
+			{
+				case eu_Nm3_h:
+				case eu_m3_h:
+				case eu_L_h:
+				case eu_kg_h:
+					sum = temp / 3600;
+					arr_chn_acc[chn_num].accumlated_remain = temp % 3600;
+					break;
+				case eu_m3_min:
+				case eu_L_min:
+				case eu_kg_min:
+				case eu_r_min:
+					sum = temp / 60;
+					arr_chn_acc[chn_num].accumlated_remain = temp % 60;
+					break;
+				default:
+					sum = temp;
+					arr_chn_acc[chn_num].accumlated_remain = 0;
+					break;
+				
+			}
+			
+			CNA_u64_add(arr_chn_acc[chn_num].accumlated_day[SYS_TIME.tm_mday - 1], sum, 3);
+			CNA_u64_add(arr_chn_acc[chn_num].accumlated_month[SYS_TIME.tm_mon - 1], sum, 3);
+			CNA_u64_add(arr_chn_acc[chn_num].accumlated_year, sum, 3);
+			CNA_u64_add(arr_chn_acc[chn_num].accumlated_total, sum, 3);
+		}
+		else
+		{
+			memset(&arr_chn_acc[chn_num], 0, sizeof(rcd_chn_accumlated_t));
 			
 		}
-		
-		CNA_u64_add(arr_chn_acc[chn_num].accumlated_day[SYS_TIME.tm_mday - 1], sum, 3);
-		CNA_u64_add(arr_chn_acc[chn_num].accumlated_month[SYS_TIME.tm_mon - 1], sum, 3);
-		CNA_u64_add(arr_chn_acc[chn_num].accumlated_year, sum, 3);
-		CNA_u64_add(arr_chn_acc[chn_num].accumlated_total, sum, 3);
-		
+			
 		//写入flash
 		CNA_Commit(chn_num);
 

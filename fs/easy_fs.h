@@ -30,7 +30,7 @@
 // function prototypes
 //------------------------------------------------------------------------------
 int 	EFS_init(char num_flash, char read_back_check);
-void 	EFS_Reset(void);
+void 	EFS_Reset(int thoroughly);
 
 #endif
 

@@ -214,7 +214,7 @@ typedef struct {
 	//显示相关
 	uint16_t			lcd_cmd_bytes;
 //	uint32_t			lcd_sem_wait_ms;
-	
+	uint32_t			last_poweroff_time;
 	struct  tm		sys_time;
 	
 	//通道板子上的信息
@@ -259,8 +259,8 @@ uint32_t  SYS_time_sec(void);
 int 			System_set_time(struct  tm *stime);
 
 
-extern void System_default(void);
-extern void SYS_Reset(void);
+extern void System_default(int num_chn);
+extern void SYS_Reset(int thoroughly, int num_chn);
 
 
 

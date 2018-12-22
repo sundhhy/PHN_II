@@ -171,18 +171,18 @@
         <Bp>
           <Number>0</Number>
           <Type>0</Type>
-          <LineNumber>1205</LineNumber>
+          <LineNumber>149</LineNumber>
           <EnabledFlag>1</EnabledFlag>
-          <Address>134274322</Address>
+          <Address>134245884</Address>
           <ByteObject>0</ByteObject>
           <HtxType>0</HtxType>
           <ManyObjects>0</ManyObjects>
           <SizeOfObject>0</SizeOfObject>
           <BreakByAccess>0</BreakByAccess>
           <BreakIfRCount>1</BreakIfRCount>
-          <Filename>..\..\model\Model_channel.c</Filename>
+          <Filename>..\..\fs\easy_fs.c</Filename>
           <ExecCommand></ExecCommand>
-          <Expression>\\PHN_II\../../model/Model_channel.c\1205</Expression>
+          <Expression>\\PHN_II\../../fs/easy_fs.c\149</Expression>
         </Bp>
       </Breakpoint>
       <WatchWindow1>
@@ -195,6 +195,16 @@
           <count>1</count>
           <WinNumber>1</WinNumber>
           <ItemText>hst_mgr</ItemText>
+        </Ww>
+        <Ww>
+          <count>2</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>arr_p_vram</ItemText>
+        </Ww>
+        <Ww>
+          <count>3</count>
+          <WinNumber>1</WinNumber>
+          <ItemText>efs_mgr</ItemText>
         </Ww>
       </WatchWindow1>
       <WatchWindow2>
@@ -462,7 +472,7 @@
 
   <Group>
     <GroupName>config</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -1154,7 +1164,7 @@
 
   <Group>
     <GroupName>utils</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -1398,7 +1408,7 @@
 
   <Group>
     <GroupName>HMI</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -1946,7 +1956,7 @@
 
   <Group>
     <GroupName>model</GroupName>
-    <tvExp>1</tvExp>
+    <tvExp>0</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>
@@ -2198,7 +2208,7 @@
 
   <Group>
     <GroupName>fs</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>0</RteFlg>

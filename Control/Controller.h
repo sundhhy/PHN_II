@@ -24,6 +24,7 @@ ABS_CLASS( Controller)
 	
 	void  (*init)( Controller *self, void *arg);
 	void (*run)( Controller *self);
+	void (*destory)(Controller *self);
 };
 //------------------------------------------------------------------------------
 // global variable declarations

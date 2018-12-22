@@ -76,19 +76,7 @@ int SmBus_rd_signal_type(IN uint8_t chn, OUT uint8_t *frame_buf, int buf_size)
 	return SmBus_Read(chn, 0x61,1, frame_buf, buf_size);
 }
 
-int SmBus_Is_duanou(IN uint8_t chn, OUT uint8_t *frame_buf, int buf_size)
-{
-	
-//	return SmBus_Read(chn, 0x61,1, frame_buf, buf_size);
-	return 0;
-}
 
-int SmBus_Is_duanzu(IN uint8_t chn, OUT uint8_t *frame_buf, int buf_size)
-{
-	
-//	return SmBus_Read(chn, 0x61,1, frame_buf, buf_size);
-	return 0;
-}
 
 //int SmBus_rd_h_l_limit(IN uint8_t chn, OUT uint8_t *frame_buf, int buf_size)
 //{
@@ -131,7 +119,7 @@ int	SmBus_Write(IN int chn, IN uint8_t addr, IN uint8_t len, IN uint8_t *wr_buf,
 	if(buf_size < (11 + p_len))
 		return -1;
 	
-	s_head->cmd = SMBUS_CMD_READ;
+	s_head->cmd = SMBUS_CMD_READ;		//读写指令是一样的
 	s_head->src_addr = SMBUS_SRC_ADDR;
 	s_head->dst_addr = chn;
 	s_head->len = 0xB0 | (p_len + 4);
@@ -237,8 +225,8 @@ int SmBus_Set_cold_tmpr(IN uint8_t clt, OUT uint8_t *frame_buf, int buf_size)
 	playload[1] = 0x80;
 	playload[2] = 0x8b;
 	playload[3] = 0x86;
-	
-	clt *= 2;
+	if(clt < 0x80)
+		clt *= 2;
 	playload[4] = 0x80 | (clt & 0xf);
 	playload[5] = 0x80 |  ((clt >> 4) & 0xf);
 	

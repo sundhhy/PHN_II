@@ -104,10 +104,16 @@ void System_power_on(void)
 //		num_pwr = 0;	
 //	phn_sys.pwr_rcd_index = num_pwr;
 
+	//获取当前的掉电信息的最后位置
 	phn_sys.pwr_rcd_index = STG_Get_alm_pwr_num(STG_LOSE_PWR);
 	if(phn_sys.pwr_rcd_index > STG_MAX_NUM_LST_PWR)
 		phn_sys.pwr_rcd_index = 0;
-
+	
+	//读取最后一条掉电记录的掉电时间作为上一次掉电时间
+	STG_Set_file_position(STG_LOSE_PWR, STG_DRC_WRITE, (phn_sys.pwr_rcd_index - 1) * sizeof(rcd_alm_pwr_t));
+	stg->rd_stored_data(stg, STG_LOSE_PWR, &stg_pwr, sizeof(rcd_alm_pwr_t));
+	phn_sys.last_poweroff_time = stg_pwr.disapper_time_s;
+	
 	//记录上电时间
 	stg_pwr.flag = 1;
 	stg_pwr.happen_time_s = SYS_time_sec();
@@ -159,25 +165,37 @@ void System_power_off(void)
 	phn_sys.sys_flag &= ~SYSFLAG_URGENCY;
 
 }
-
-void SYS_Reset(void)
+#include "control/CtlTimer.h"
+void SYS_Reset(int thoroughly, int num_chn)
 {
 	int chn_num;
-	EFS_Reset();
-	System_default();
-	for(chn_num = 0; chn_num < NUM_CHANNEL; chn_num ++)
+	int	recode_file_size;
+//	Controller		*p_control;
+
+//	if(thoroughly)
+//	{
+//		p_control = SUPER_PTR(Get_ctl_time(), Controller);
+//		if(p_control == NULL) while(1);
+//		p_control->destory(p_control);
+//		
+//	}
+	EFS_Reset(thoroughly);
+	System_default(num_chn);
+	
+	recode_file_size = STG_Equally_recode_stg(num_chn);
+	for(chn_num = 0; chn_num < num_chn; chn_num ++)
 	{
 		MdlChn_default_conf(chn_num);
 		MdlChn_default_alarm(chn_num);
+		MdlChn_set_rcd_file_size(chn_num, recode_file_size);
 		MdlChn_Commit_conf(chn_num);
-		
 	}
-	STG_Reset();
-	CNA_default();
+	STG_Reset(num_chn);
+	CNA_default(num_chn);
 	
 }
 
-void System_default(void)
+void System_default(int num_chn)
 {
 	system_conf_t 	*p_sc = &phn_sys.sys_conf;
 	Storage			*stg = Get_storage();
@@ -186,15 +204,15 @@ void System_default(void)
 	
 	//密码不要随意复位
 	
-	Clone_psd(p_sc->super_psd, super_psd);
+//	Clone_psd(p_sc->super_psd, super_psd);
 	Clone_psd(p_sc->password, password);
 	memset(p_sc, 0, sizeof(system_conf_t));
-	Clone_psd(super_psd, p_sc->super_psd);
+//	Clone_psd(super_psd, p_sc->super_psd);
 	Clone_psd(password, p_sc->password);
 	
 	
 	p_sc->sys_flag = 0;
-	p_sc->num_chn = NUM_CHANNEL;
+	p_sc->num_chn = num_chn;
 	p_sc->cold_end_way = 0;
 	p_sc->id = 1;
 	p_sc->record_gap_s = 1;
@@ -207,12 +225,12 @@ void System_default(void)
 	
 	stg->wr_stored_data(stg, STG_SYS_CONF, &phn_sys.sys_conf, sizeof(phn_sys.sys_conf));
 	
-	if((p_sc->super_psd[0] == 0xff) && (p_sc->super_psd[1] == 0xff) && (p_sc->super_psd[2] == 0xff))
-	{
-		p_sc->super_psd[0] = PHN_DEF_SUPER_PSD_1;
-		p_sc->super_psd[1] = PHN_DEF_SUPER_PSD_2;
-		p_sc->super_psd[2] = PHN_DEF_SUPER_PSD_3;
-	}
+//	if((p_sc->super_psd[0] == 0xff) && (p_sc->super_psd[1] == 0xff) && (p_sc->super_psd[2] == 0xff))
+//	{
+//		p_sc->super_psd[0] = PHN_DEF_SUPER_PSD_1;
+//		p_sc->super_psd[1] = PHN_DEF_SUPER_PSD_2;
+//		p_sc->super_psd[2] = PHN_DEF_SUPER_PSD_3;
+//	}
 	
 	if((p_sc->password[0] == 0xff) && (p_sc->password[1] == 0xff) && (p_sc->password[2] == 0xff))
 	{
@@ -278,7 +296,12 @@ void System_init(void)
 	LOG_Init();
 	stg->rd_stored_data(stg, STG_SYS_CONF, &phn_sys.sys_conf, sizeof(phn_sys.sys_conf));
 	if((phn_sys.sys_conf.num_chn > NUM_CHANNEL) || (phn_sys.sys_conf.num_chn == 0))
-		System_default();
+		System_default(NUM_CHANNEL);
+	
+	
+	phn_sys.sys_conf.super_psd[0] = PHN_DEF_SUPER_PSD_1;
+	phn_sys.sys_conf.super_psd[1] = PHN_DEF_SUPER_PSD_2;
+	phn_sys.sys_conf.super_psd[2] = PHN_DEF_SUPER_PSD_3;
 	
 	
 	CNA_Init();

@@ -151,7 +151,7 @@ int main (void) {
 	p_control = SUPER_PTR( Get_CtlKey(), Controller);
 	p_control->init(p_control, p_kb);
 	
-	p_control = SUPER_PTR(CtlTimer_new(), Controller);
+	p_control = SUPER_PTR(Get_ctl_time(), Controller);
 	if(p_control == NULL) while(1);
 	p_control->init(p_control, NULL);
 //	

@@ -317,19 +317,37 @@ static int Sys_key_up(void *arg)
 	 
 	 if(btn_id == BTN_TYPE_SAVE)
 	 {
-		 //sundh 181212 设置为设定,切设定值变化时，发送设置冷端温度到通道板
-		 if((p_run->temp_sys_conf.cold_end_way)	&& (p_run->temp_sys_conf.CJC != phn_sys.sys_conf.CJC))
+		 
+		 //sundh  冷端补偿方式变成外部
+		 if((p_run->temp_sys_conf.cold_end_way == 0)	&& (phn_sys.sys_conf.cold_end_way == 1))
 		 {
-			 i = SmBus_Set_cold_tmpr(p_run->temp_sys_conf.CJC, sbub_buf, 32);
+			 
+			 i = SmBus_Set_cold_tmpr(0xff, sbub_buf, 32);
 			 I_uart3->write(I_uart3, sbub_buf, i);
+			 delay_ms(100);
+
 			 i = I_uart3->read(I_uart3, sbub_buf, 32);
 			if(i <= 0)
 			{
 				set_cld_failed = 1;
 				
 			}
+		 }
+		 //sundh 181212 设置为设定,切设定值变化时，发送设置冷端温度到通道板
+		 else if((p_run->temp_sys_conf.cold_end_way)	&& (p_run->temp_sys_conf.CJC != phn_sys.sys_conf.CJC))
+		 {
+			 i = SmBus_Set_cold_tmpr(p_run->temp_sys_conf.CJC, sbub_buf, 32);
+			 I_uart3->write(I_uart3, sbub_buf, i);
+			 delay_ms(100);
+			 i = I_uart3->read(I_uart3, sbub_buf, 32);
+			if(i <= 0)
+			{
+				set_cld_failed = 1;
+
+			}
 			 
 		 }
+		 
 		 
 		 p_run->set_clt_failed = set_cld_failed;
 		
@@ -549,7 +567,7 @@ static int Sys_commit(void *arg)
 		break;
 	case row_factory_reset:
 		LOG_Add(LOG_Factory_Reset);
-		SYS_Reset();
+		SYS_Reset(0, NUM_CHANNEL);
 		break;
 //	default:
 //		ret = ERR_OPT_FAILED;
@@ -625,7 +643,7 @@ static int Sys_update_content(int op, int weight)
 		Str_set_sys_param(p_cfg,arr_p_vram[p_syf->f_row], es_id, op, weight);
 		break;
 	case row_modify_param:
-		Str_set_sys_param(p_cfg,arr_p_vram[p_syf->f_row], es_mdfy_prm, op, weight);
+//		Str_set_sys_param(p_cfg,arr_p_vram[p_syf->f_row], es_mdfy_prm, op, weight);
 		break;
 	case row_cold_end_way:
 		Str_set_sys_param(p_cfg,arr_p_vram[p_syf->f_row], es_cold_end_way, op, weight);
