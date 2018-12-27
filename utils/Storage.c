@@ -1328,7 +1328,7 @@ static int 	STG_Open_file(uint8_t type, uint32_t file_size)
 	
 	if(IS_SYS_CONF(type))
 	{
-		fd = STG_SYS.fs.fs_open(STRG_CFG_FSH_NUM, "phn.cfg", "log", 256);		//
+		fd = STG_SYS.fs.fs_open(STRG_CFG_FSH_NUM, "phn.cfg", "log", 256);		//"log" 在删除文件系统的时候，不会被删除
 		
 	}
 	else if(IS_CHN_CONF(type))

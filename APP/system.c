@@ -39,7 +39,7 @@ static UtlRtc *sys_rtc;
 //为了能够紧凑的定义一些静态变量，所以都定义在一起
 //只有非4字节对齐的，需要放在这里定于
 char 				*arr_p_vram[18];
-uint16_t			time_smp;
+//uint16_t			time_smp;
 //char				g_setting_chn = 0;
 char				flush_flag = 0;
 //------------------------------------------------------------------------------
@@ -314,6 +314,7 @@ void System_init(void)
 		
 	}
 	
+	
 	MdlChn_Read_code_end_temperature();
 //	System_power_off();
 #endif	
@@ -356,7 +357,7 @@ int  System_set_time(struct  tm *stime)
 uint32_t  SYS_time_sec(void)
 {
 	
-	return Time_2_u32(&phn_sys.sys_time);
+ 	return Time_2_u32(&phn_sys.sys_time);
 //	Model 		*m;
 //	uint32_t	sec = 0;
 //	m = Create_model("time");

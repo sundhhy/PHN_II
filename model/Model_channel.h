@@ -248,6 +248,7 @@ extern Model		*arr_p_mdl_chn[NUM_CHANNEL];
 //------------------------------------------------------------------------------
 Model_chn *Get_Mode_chn(int n);
 void MdlChn_Read_code_end_temperature();
+
 int	MdlChn_save_data(uint8_t chn_num, mdl_chn_save_t *p);		//把要存储的数据放入p，返回长度
 void MdlChn_default_conf(int chn_num);
 void MdlChn_default_alarm(int chn_num);
@@ -258,5 +259,5 @@ int MdlChn_Commit_conf(int chn_num);			//提交修改,会把通道的配置写入存储和发送给
 uint8_t  MdlChn_Cal_prc( Model *self, int val);
 int	MCH_Set_info_buf(Model_chn *cthis, void *buf, int buf_size);		//在设置时，可能需要先把数值设置到缓存中，而不是直接修改模型的数据
 int	MCH_Set_alarm_buf(Model_chn *cthis, void *buf, int buf_size);
-
+void MCH_Store_rcd(int chn);
 #endif

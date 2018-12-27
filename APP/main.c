@@ -22,6 +22,7 @@
 #include "TDD.h"
 #include "HMI/HMIFactory.h"
 #include "HMI/Component_tips.h"
+#include "Model_channel.h"
 
 #include "Usb.h"
 #include "usb_hardware_interface.h"
@@ -107,7 +108,7 @@ int main (void) {
 	Model 			*p_mdl_time;
 //	CMP_tips 		*p_tips;
 	uint16_t	main_ms = 0;
-
+	uint16_t	i;
 
 //	uint8_t			old_sys_flag;
 	
@@ -128,6 +129,8 @@ int main (void) {
 	// initialize CMSIS-RTOS
 	//各个外设驱动模块初始化
 	System_init();
+	
+	phn_sys.store_rcd_time = SYS_time_sec() +  phn_sys.sys_conf.record_gap_s;
 	
 	
 	//控制器初始化
@@ -202,6 +205,21 @@ int main (void) {
 
 			}
 			LCD_Run();
+			
+		}
+		
+		
+		if(phn_sys.store_rcd_time <= SYS_time_sec())
+		{
+			phn_sys.store_rcd_time = SYS_time_sec() + phn_sys.sys_conf.record_gap_s;
+			
+			
+			for(i = 0; i < phn_sys.sys_conf.num_chn; i++)
+			{
+				
+				MCH_Store_rcd(i);
+				
+			}
 			
 		}
 		

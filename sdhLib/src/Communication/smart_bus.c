@@ -579,7 +579,7 @@ static int	SmBus_dcd_AI_read(uint8_t *frame, OUT SmBus_result_t *rst)
 	rst->chn_num = s_head->src_addr & 0x0f;
 	
 	ret  = SmBus_Get_u16(play_load + 1);
-	if(ret > 0)
+//	if(ret > 0)
 	{
 		rst->val = ret;
 		ret = RET_OK;

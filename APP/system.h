@@ -167,7 +167,9 @@ typedef struct {
 	int				file_sem;
 	
 	uint16_t		start_page;
-	uint16_t		num_page;
+	uint16_t		none_16;
+
+	uint32_t		num_page;
 	
 	uint32_t		file_size;
 	uint32_t		read_position;
@@ -221,7 +223,7 @@ typedef struct {
 	uint8_t				DO_val;				//DO的实时值
 	uint8_t				DO_err;
 	uint16_t			code_end_temperature;
-	
+	uint32_t			store_rcd_time;
 	
 	
 	
@@ -241,7 +243,7 @@ typedef struct {
 // global variable declarations
 //------------------------------------------------------------------------------
 extern	char 				*arr_p_vram[18];
-extern	uint16_t		time_smp;			//下次记录的时间
+//extern	uint16_t		time_smp;			//下次记录的时间
 //extern 	char				g_setting_chn;
 extern	char				flush_flag;
 

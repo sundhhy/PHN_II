@@ -83,7 +83,9 @@ typedef struct {
 	char		efile_fsh_NO;
 	char		efile_name[EFS_NAME_LEN];
 	uint16_t	efile_start_pg;
-	uint16_t	efile_num_pg;
+	uint16_t	none;
+
+	uint32_t	efile_num_pg;
 	uint32_t	efile_wr_position;
 //	uint16_t	efile_space_low_bytes;		//文件容量小于这个值的时候，报警
 }efs_file_mgt_t;
@@ -251,8 +253,14 @@ int	EFS_open(uint8_t prt, char *path, char *mode, int	file_size)
 		
 		EFS_Init_file_sem(new_fd);
 		
-		
-		EFS_Erase_file(new_fd, 0, 0);
+		p = strstr(mode, "cfg");
+		if(p == NULL)
+		{
+			//配置文件就不擦除了，否则可能会出现写入的配置信息被之后的删除给清除掉.
+			EFS_Erase_file(new_fd, 0, 0);
+
+		}
+//		EFS_Erase_file(new_fd, 0, 0);
 		
 	}
 	if(new_fd >= 0)
@@ -1096,7 +1104,7 @@ static int EFS_create_file(uint8_t	fd, uint8_t	prt, char *path, int size)
 			efs_mgr.arr_static_info[i].efile_fsh_NO = prt;
 			efs_mgr.arr_static_info[i].efs_flag = 1;
 			efs_mgr.arr_static_info[i].efile_start_pg = (space.start_addr + EFS_FSH(prt).fnf.page_size - 1)/ EFS_FSH(prt).fnf.page_size;
-			efs_mgr.arr_static_info[i].efile_num_pg = (size + + EFS_FSH(prt).fnf.page_size - 1) / EFS_FSH(prt).fnf.page_size;
+			efs_mgr.arr_static_info[i].efile_num_pg = (size + EFS_FSH(prt).fnf.page_size - 1) / EFS_FSH(prt).fnf.page_size;
 //			if(size > efs_mgr.arr_static_info[i].efile_num_pg * EFS_FSH(prt).fnf.page_size)
 //				efs_mgr.arr_static_info[i].efile_num_pg += 1;
 			

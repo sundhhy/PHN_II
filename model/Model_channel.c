@@ -244,6 +244,23 @@ void MdlChn_default_conf(int chn_num)
 	
 	
 }
+#include "utils/Storage.h"
+
+void MCH_Store_rcd(int chn)
+{
+	Model_chn *p_mdl= Get_Mode_chn(chn);
+	Storage		*stg = Get_storage();
+	uint16_t save_buf[2];
+
+	
+	if(p_mdl->chni.flag_err & CHN_ERR_CMM)
+		return;
+	save_buf[0] = p_mdl->chni.value;
+				
+	save_buf[1] = 1;		//小数点固定都是1位
+	stg->wr_stored_data(stg, STG_CHN_DATA(chn), save_buf, 4);
+	
+}
 
 
 void MdlChn_default_alarm(int chn_num)
@@ -808,6 +825,7 @@ static int MdlChn_init(Model *self, IN void *arg)
 	
 	self->self_check(self);		//1812 从背板获取上下限信息
 
+	cthis->chni.value = 0;
 	stg->open_file(STG_CHN_DATA(cthis->chni.chn_NO), cthis->chni.MB * 1024 * 1024);
 	return RET_OK;
 }
@@ -886,33 +904,16 @@ static int MdlChn_self_check( Model *self)
 		goto err;
 	}
 	
-	delay_ms(100);
-//	i = SmBus_rd_signal_type(SMBUS_MAKE_CHN(SMBUS_CHN_AI, cthis->chni.chn_NO), chk_buf, 32);
-//	if( I_uart3->write(I_uart3, chk_buf, i) != RET_OK)
-//	{
-//		ret = 4;
-//		goto err;
-//	}
-//	i = I_uart3->read(I_uart3, chk_buf, 32);
-//	if(i <= 0)
-//	{
-//		ret = -5;
-//		goto err;
-//	}
-//	if(SmBus_decode(SMBUS_CMD_READ, chk_buf, &tmp_u8, 1) != RET_OK)
-//	{
-//		ret = -6;
-//		goto err;
-//	}
-//	cthis->chni.signal_type = tmp_u8;
+//	delay_ms(100);
+
 	if(self->getMdlData(self, AUX_SIGNALTYPE, NULL) != RET_OK)
 	{
 		ret = -1;
 		goto err;
 	}
-	delay_ms(100);
+//	delay_ms(100);
 	self->getMdlData(self, chnaux_lower_limit, NULL);
-	delay_ms(100);
+//	delay_ms(100);
 	self->getMdlData(self, chnaux_upper_limit, NULL);
 	
 //	delay_ms(100);
@@ -971,9 +972,9 @@ static int MdlChn_self_check( Model *self)
 static void MdlChn_run(Model *self)
 {
 	Model_chn					*cthis = SUB_PTR(self, Model, Model_chn);
-	Storage						*stg = Get_storage();
+//	Storage						*stg = Get_storage();
 	uint8_t						chk_buf[16];
-	int16_t					save_buf[2];  //存放实时值及小数点位数
+//	int16_t					save_buf[2];  //存放实时值及小数点位数
 	SmBus_result_t		rst;
 //	do_out_t			d = {0};
 	
@@ -1188,9 +1189,9 @@ static void MdlChn_run(Model *self)
 		
 	}
 	
-	save_buf[0] = cthis->chni.value;
-	save_buf[1] = cthis->chni.decimal_places;
-	stg->wr_stored_data(stg, STG_CHN_DATA(cthis->chni.chn_NO), save_buf, 4);
+//	save_buf[0] = cthis->chni.value;
+//	save_buf[1] = cthis->chni.decimal_places;
+//	stg->wr_stored_data(stg, STG_CHN_DATA(cthis->chni.chn_NO), save_buf, 4);
 	
 	if(( cthis->chni.flag_err & CHN_ERR_CMM))
 	{

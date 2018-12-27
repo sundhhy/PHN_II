@@ -61,7 +61,8 @@ int MdlTime_init( Model *self, IN void *arg)
 	
 //	self->dataSource = rtc;
 	System_time(tm);
-	
+		
+
 	self->coreData = tm;
 	self->crDt_len = sizeof( *tm);
 	
