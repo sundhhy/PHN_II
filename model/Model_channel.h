@@ -150,7 +150,8 @@ typedef struct {
 	uint8_t			decimal_places;		//只有测温的才是1位小时，其他都是整数
 	
 	int16_t			lfv;		//last filter value  上一次滤波值
-	int16_t			none;
+	uint8_t			alarm_out;		//报警输出通道
+	uint8_t			none;
 	
 }chn_info_t;
 
@@ -260,4 +261,6 @@ uint8_t  MdlChn_Cal_prc( Model *self, int val);
 int	MCH_Set_info_buf(Model_chn *cthis, void *buf, int buf_size);		//在设置时，可能需要先把数值设置到缓存中，而不是直接修改模型的数据
 int	MCH_Set_alarm_buf(Model_chn *cthis, void *buf, int buf_size);
 void MCH_Store_rcd(int chn);
+int MCH_Get_alarm_out(int chn);
+
 #endif

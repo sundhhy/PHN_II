@@ -262,6 +262,14 @@ void MCH_Store_rcd(int chn)
 	
 }
 
+int MCH_Get_alarm_out(int chn)
+{
+	Model_chn *p_mdl= Get_Mode_chn(chn);
+	
+	return p_mdl->chni.alarm_out;
+	
+}
+
 
 void MdlChn_default_alarm(int chn_num)
 {
@@ -328,6 +336,7 @@ int MdlChn_Commit_conf(int chn_num)
 	chn_info_t		*p_info;
 	chn_alarm_t		*p_tmp_alarm;
 	int				i;
+	int				singtype_change = 0;
 	
 	if(p_mdl->p_tmp_info )
 	{
@@ -340,6 +349,12 @@ int MdlChn_Commit_conf(int chn_num)
 			self->setMdlData(self, AUX_UNIT, &p_info->unit);
 		if(p_info->tag_NO != p_mdl->chni.tag_NO)
 			self->setMdlData(self, chnaux_tag_NO, &p_info->tag_NO);
+		
+		if(p_info->signal_type != p_mdl->chni.signal_type)
+		{
+				//重新设置默认的报警上下限
+				singtype_change = 1;
+		}			
 		if((p_info->signal_type != p_mdl->chni.signal_type)		||
 				(p_info->lower_limit != p_mdl->chni.lower_limit)	||
 				(p_info->upper_limit != p_mdl->chni.upper_limit))
@@ -349,6 +364,9 @@ int MdlChn_Commit_conf(int chn_num)
 
 			self->setMdlData(self, AUX_SIGNALTYPE, &p_info->signal_type);
 		}
+		
+		if(singtype_change)
+			MdlChn_default_alarm(chn_num);
 		//设置信号类型的时候，会把上下限也一起发送下去的
 //		if(p_info->lower_limit != p_mdl->chni.lower_limit)		
 //			self->setMdlData(self, chnaux_lower_limit, &p_info->lower_limit);
@@ -390,6 +408,15 @@ int MdlChn_Commit_conf(int chn_num)
 		
 //		p_tmp_alarm->alm_flag = p_mdl->alarm.alm_flag;	//实时值不能被临时缓存覆盖
 		
+		
+		
+		//如果报警触点发生变化，要先把旧的报警输出清除掉
+//		phn_sys.DO_err &= ~(1 << p_mdl->alarm.alarm_hh);
+//		phn_sys.DO_err &= ~(1 << p_mdl->alarm.alarm_hi);
+//		phn_sys.DO_err &= ~(1 << p_mdl->alarm.alarm_lo);
+//		phn_sys.DO_err &= ~(1 << p_mdl->alarm.alarm_ll);
+
+			
 		
 		
 		if(p_tmp_alarm->alarm_hh != p_mdl->alarm.alarm_hh)
@@ -634,6 +661,9 @@ static void Signal_Alarm(Model_chn *cthis)
 	
 	if(phn_sys.sys_flag & SYSFLAG_POWEROFF)
 		return;
+	
+	
+	p->alarm_out = 0;
 
 	flag = p_alm->alm_flag;
 	
@@ -643,11 +673,11 @@ static void Signal_Alarm(Model_chn *cthis)
 	prc_data = Percent_to_data(p, bjhc, 1);	
 	
 	tempS2 = p_alm->alarm_ll;				//低低报时加上回差
-	if(flag & ALM_LL)
+//	if(flag & ALM_LL)
 		tempS2 += prc_data;	
 
 	tempS3 = p_alm->alarm_lo;		//低报时加上回差
-	if(flag & ALM_LO)
+//	if(flag & ALM_LO)
 		tempS3 += prc_data;	
 	
 	p->value = p->value;
@@ -657,14 +687,16 @@ static void Signal_Alarm(Model_chn *cthis)
 		if(p->value < tempS2)
 		{	//低低报
 			#if TEST_SIMU_DATA == 0
-			phn_sys.DO_err |= 1 << p_alm->touch_spot_ll;
+			p->alarm_out |= 1 << p_alm->touch_spot_ll;
+//			phn_sys.DO_err |= 1 << p_alm->touch_spot_ll;
 			#endif
 			new_flag |= ALM_LL;
 		}
 		else
 		{	//低报
 			#if TEST_SIMU_DATA == 0
-			phn_sys.DO_err |= 1 << p_alm->touch_spot_lo;
+			p->alarm_out |= 1 << p_alm->touch_spot_lo;
+//			phn_sys.DO_err |= 1 << p_alm->touch_spot_lo;
 			#endif
 			new_flag |= ALM_LO;
 		}
@@ -672,11 +704,11 @@ static void Signal_Alarm(Model_chn *cthis)
 	else
 	{
 		tempS2 = p_alm->alarm_hh;
-		if(flag & ALM_HH)
+//		if(flag & ALM_HH)
 			tempS2 -= prc_data;	
 
 		tempS3 = p_alm->alarm_hi;
-		if(flag & ALM_HI)
+//		if(flag & ALM_HI)
 			tempS3 -= prc_data;	
 		
 		if(p->value>tempS3)
@@ -684,7 +716,8 @@ static void Signal_Alarm(Model_chn *cthis)
 				if(p->value>tempS2)
 				{		//高高报
 					#if TEST_SIMU_DATA == 0
-					phn_sys.DO_err |= 1 << p_alm->touch_spot_hh;
+					p->alarm_out |= 1 << p_alm->touch_spot_hh;
+//					phn_sys.DO_err |= 1 << p_alm->touch_spot_hh;
 					#endif
 					new_flag |= ALM_HH;
 				}
@@ -692,7 +725,8 @@ static void Signal_Alarm(Model_chn *cthis)
 				{
 					//高报
 					#if TEST_SIMU_DATA == 0
-					phn_sys.DO_err |= 1 << p_alm->alarm_hi;
+					p->alarm_out |= 1 << p_alm->touch_spot_hi;
+//					phn_sys.DO_err |= 1 << p_alm->alarm_hi;
 					#endif
 					new_flag |= ALM_HI;
 				}
@@ -1185,9 +1219,11 @@ static void MdlChn_run(Model *self)
 //		if((phn_sys.sys_flag & SYSFLAG_SETTING) == 0)
 			self->notify(self);
 		
-		Signal_Alarm(cthis);
 		
 	}
+	
+	Signal_Alarm(cthis);
+
 	
 //	save_buf[0] = cthis->chni.value;
 //	save_buf[1] = cthis->chni.decimal_places;
@@ -1876,19 +1912,19 @@ static int MdlChn_modify_sconf(Model *self, IN int aux, char *s, int op, int val
 			self->to_string(self, aux, s);
 			break;
 		case tchspt_hh:
-			p_alarm->touch_spot_hh = Operate_in_range(p_alarm->touch_spot_hh, op, val, 1, MAX_TOUCHSPOT);
+			p_alarm->touch_spot_hh = Operate_in_range(p_alarm->touch_spot_hh, op, val, 0, MAX_TOUCHSPOT);
 			Print_touch_spot(p_alarm->touch_spot_hh, (char *)s);
 			break;
 		case tchspt_hi:
-			p_alarm->touch_spot_hi = Operate_in_range(p_alarm->touch_spot_hi, op, val, 1, MAX_TOUCHSPOT);
+			p_alarm->touch_spot_hi = Operate_in_range(p_alarm->touch_spot_hi, op, val, 0, MAX_TOUCHSPOT);
 			Print_touch_spot(p_alarm->touch_spot_hi, (char *)s);
 			break;
 		case tchspt_lo:
-			p_alarm->touch_spot_lo = Operate_in_range(p_alarm->touch_spot_lo, op, val, 1, MAX_TOUCHSPOT);
+			p_alarm->touch_spot_lo = Operate_in_range(p_alarm->touch_spot_lo, op, val, 0, MAX_TOUCHSPOT);
 			Print_touch_spot(p_alarm->touch_spot_lo, (char *)s);	
 			break;
 		case tchspt_ll:
-			p_alarm->touch_spot_ll = Operate_in_range(p_alarm->touch_spot_ll, op, val, 1, MAX_TOUCHSPOT);
+			p_alarm->touch_spot_ll = Operate_in_range(p_alarm->touch_spot_ll, op, val, 0, MAX_TOUCHSPOT);
 			Print_touch_spot(p_alarm->touch_spot_ll, (char *)s);	
 			break;	
 		case alarm_backlash:

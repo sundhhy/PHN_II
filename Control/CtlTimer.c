@@ -118,7 +118,6 @@ static void Init_ctime( Controller *self, void *arg)
 	assert(ret == RET_OK);
 	Ctime_Allco_time(phn_sys.sys_conf.record_gap_s, NUM_CHANNEL);
 	cthis->time_count = 0;
-//	time_smp = 0;
 	
 }
 
@@ -156,42 +155,39 @@ static void Ctime_periodic (void const *arg)
 
 	for(i = 0; i < phn_sys.sys_conf.num_chn; i++)
 	{
-//		if(chn_smp_time[i] != time_smp)
-//			continue;
 		sprintf(chn_name,"chn_%d", i);
 		p_md = Create_model(chn_name);
 		p_md->run(p_md);
 	}
 	
-//	if(store_delay_s)
-//	{
-//		
-//		store_delay_s --;
-//	}
-//	else
-//	{
-//		//TODO:移到主循环中去做比较好，减轻定时器任务的负荷。
-//		store_delay_s = phn_sys.sys_conf.record_gap_s;
-//		for(i = 0; i < phn_sys.sys_conf.num_chn; i++)
-//		{
-//			sprintf(chn_name,"chn_%d", i);
-//			p_md = Create_model(chn_name);
-//			if(p_md->getMdlData(p_md, AUX_DATA, save_buf) < 0)
-//				continue;
-//			save_buf[1] = 1;		//小数点固定都是1位
-//			stg->wr_stored_data(stg, STG_CHN_DATA(i), save_buf, 4);
-//		}
-//	}
+
 	
 	
 	CNA_Run(1000);
 	
-//	if(time_smp < phn_sys.sys_conf.record_gap_s)
-//	{
-//		time_smp ++;
-//	} 
-//	else
-//		time_smp = 0;
+
+	
+	
+	save_buf[0] = 0;	//触点是否需要输出报警
+	
+	
+	
+	
+	
+	
+	for(i = 0; i <  phn_sys.sys_conf.num_chn; i++)
+	{
+		phn_sys.DO_err |= MCH_Get_alarm_out(i);
+		
+//		if(phn_sys.DO_err & (1 << i))
+//		{
+//			save_buf[0] |= 1 << i;
+//			
+//		}
+		
+		
+	}
+	
 	
 	for(i = 0; i < MAX_TOUCHSPOT; i++)
 	{
@@ -200,13 +196,25 @@ static void Ctime_periodic (void const *arg)
 		{
 			
 			d.val = 1;
-			p_md->setMdlData(p_md, DO_output, &d);
 		}
-		else if(phn_sys.DO_val & (1 << i))		//清除报警
+		else
 		{
 			d.val = 0;
-			p_md->setMdlData(p_md, DO_output, &d);
+			
 		}
+		
+		p_md->setMdlData(p_md, DO_output, &d);
+//		if(phn_sys.DO_err & (1 << i))
+//		{
+//			
+//			d.val = 1;
+//			p_md->setMdlData(p_md, DO_output, &d);
+//		}
+//		else if(phn_sys.DO_val & (1 << i))		//清除报警
+//		{
+//			d.val = 0;
+//			p_md->setMdlData(p_md, DO_output, &d);
+//		}
 		
 	}
 	phn_sys.DO_err = 0;
