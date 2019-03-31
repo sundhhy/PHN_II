@@ -196,7 +196,7 @@ static int NLM_Entry(int row, int col, void *pp_text)
 					sprintf(arr_p_vram[r], "HI");
 					break;
 				case ALM_CODE_LO:
-					sprintf(arr_p_vram[r], "LO");
+					sprintf(arr_p_vram[r], "LI");
 					break;
 				case ALM_CODE_LL:
 					sprintf(arr_p_vram[r], "LL");
@@ -248,6 +248,9 @@ static int NLM_Init(void *arg)
 {
 	int i = 0;
 	nlm_run_t *p_run;
+	int flag = *(int *)arg;
+	if(flag)
+		return 0;	
 	
 	HMI_Ram_init();
 	for(i = 0; i < STG_NUM_VRAM; i++) {

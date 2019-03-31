@@ -22,8 +22,8 @@
 //------------------------------------------------------------------------------
 // const defines
 //------------------------------------------------------------------------------
-#define 	PHN_MAJOR_VER				3
-#define 	PHN_MINOR_VER				24
+#define 	PHN_MAJOR_VER				4
+#define 	PHN_MINOR_VER				0
 
 #define 	PHN_DEF_SUPER_PSD_1			0x01			
 #define 	PHN_DEF_SUPER_PSD_2			0x01
@@ -135,6 +135,8 @@ void System_power_off(void)
 	uint32_t		dsp_time = 0;
 	Storage			*stg = Get_storage();
 	
+//	return;		//todo:debug
+	
 	phn_sys.sys_flag |= SYSFLAG_URGENCY;
 	//掉电信息无效时，就不要存储掉电时间了
 	//当擦执行了擦除掉电信息操作的时候，会出现这种情况
@@ -222,7 +224,11 @@ void System_default(int num_chn)
 	p_sc->storage_alarm = STG_DEFAULT_ALARM;
 	
 	
-	stg->wr_stored_data(stg, STG_SYS_CONF, &phn_sys.sys_conf, sizeof(phn_sys.sys_conf));
+	while(stg->wr_stored_data(stg, STG_SYS_CONF, &phn_sys.sys_conf, sizeof(phn_sys.sys_conf)) != RET_OK)
+	{
+		
+		delay_ms(10);
+	}
 	
 //	if((p_sc->super_psd[0] == 0xff) && (p_sc->super_psd[1] == 0xff) && (p_sc->super_psd[2] == 0xff))
 //	{
@@ -231,7 +237,7 @@ void System_default(int num_chn)
 //		p_sc->super_psd[2] = PHN_DEF_SUPER_PSD_3;
 //	}
 	
-	if((p_sc->password[0] == 0xff) && (p_sc->password[1] == 0xff) && (p_sc->password[2] == 0xff))
+//	if((p_sc->password[0] == 0xff) && (p_sc->password[1] == 0xff) && (p_sc->password[2] == 0xff))
 	{
 		p_sc->password[0] = 0;
 		p_sc->password[1] = 0;
@@ -304,7 +310,7 @@ void System_init(void)
 	
 	
 	CNA_Init();
-	for(i = 0; i < NUM_CHANNEL; i++)
+	for(i = 0; i < phn_sys.sys_conf.num_chn; i++)
 	{
 
 		sprintf(chn_name,"chn_%d", i);

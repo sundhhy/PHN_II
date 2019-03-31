@@ -360,6 +360,9 @@ int Sem_init(sem_t *sem)
 			break;
 		
 	}
+	
+	if(ret != RET_OK)
+		ret = ERR_OSRSU_UNAVAILABLE;
 	return ret;
 	
 	

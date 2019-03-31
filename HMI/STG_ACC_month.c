@@ -260,6 +260,9 @@ static int SAM_Init(void *arg)
 {
 	int i = 0;
 	sam_run_t				*p_run = STG_P_RUN;
+	int flag = *(int *)arg;
+	if(flag)
+		return 0;
 	
 	HMI_Ram_init();
 	for(i = 0; i < SAM_RAM_MAX; i++) {

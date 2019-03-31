@@ -279,10 +279,10 @@ static void Spi_baud_Prescaler(int baudrate, SPI_InitTypeDef *spi_def)
 //		SPI_BaudRatePrescaler_16, SPI_BaudRatePrescaler_32, SPI_BaudRatePrescaler_64, \
 //		SPI_BaudRatePrescaler_128, SPI_BaudRatePrescaler_256};
 //	int div = SPI_CLK/baudrate;
-//		
-//	
-//	
-//	spi_def->SPI_BaudRatePrescaler = bpr[div];
+		
+	
+	
+	spi_def->SPI_BaudRatePrescaler = SPI_BaudRatePrescaler_4;
 }
 
 static int spi_read_word(SPI_TypeDef	*spi_reg)

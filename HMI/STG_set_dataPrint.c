@@ -89,6 +89,9 @@ static int Data_print_Strategy_entry(int row, int col, void *pp_text)
 
 static int DPT_init(void *arg)
 {
+	int flag = *(int *)arg;
+	if(flag)
+		return 0;	
 	STG_SELF.total_col = 1;
 	STG_SELF.total_row = 6;
 	return RET_OK;

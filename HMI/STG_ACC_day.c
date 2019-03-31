@@ -231,7 +231,11 @@ static int SAD_Entry(int row, int col, void *pp_text)
 static int SAD_Init(void *arg)
 {
 	int i = 0;
+	
 	sad_run_t *p_run;
+	int flag = *(int *)arg;
+	if(flag)
+		return 0;
 	
 	HMI_Ram_init();
 	for(i = 0; i < SAD_RAM_MAX; i++) {

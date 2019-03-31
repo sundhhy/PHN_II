@@ -271,11 +271,15 @@ static void	HMI_SBG_Hide(HMI *self)
 static void	HMI_SBG_Init_focus(HMI *self)
 {
 	HMI_striped_background		*cthis = SUB_PTR( self, HMI, HMI_striped_background);
+	int keep_flag;
 	cthis->f_col = 0;
 	cthis->sub_flag &= 0xf0;
 	cthis->col_max = 1;
-//	if((self->arg[2] & HMI_ATT_KEEP) == 0)
-		cthis->p_sy->init(NULL);
+	if((self->arg[2] & HMI_ATT_KEEP) == 0)
+		keep_flag = 0;
+	else
+		keep_flag = 1;
+		cthis->p_sy->init(&keep_flag);
 	SET_PG_FLAG(cthis->sub_flag, FOCUS_IN_STARTEGY);
 	
 	

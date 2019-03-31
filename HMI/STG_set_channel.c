@@ -219,34 +219,37 @@ static int Cns_init(void *arg)
 {
 	int i = 0;
 	cns_run_t	*p_run;
-	memset(&STG_SELF.sf, 0, sizeof(STG_SELF.sf));
-	STG_SELF.sf.f_col = 1;
-	STG_SELF.sf.f_row = 0;
-	STG_SELF.sf.start_byte = 0;
-	STG_SELF.sf.num_byte = 1;
-	HMI_Ram_init();
-	for(i = 0; i < STG_NUM_VRAM; i++) {
-		
-		
-		
-		if(i != STG_RUN_VRAM_NUM)
-		{
-			arr_p_vram[i] = HMI_Ram_alloc(48);
-			memset(arr_p_vram[i], 0, 48);
-		}
-		else
-		{
-			arr_p_vram[i] = HMI_Ram_alloc(sizeof(cns_run_t));
-			memset(arr_p_vram[i], 0, sizeof(cns_run_t));
-		}
+	int flag = *(int *)arg;
+//	if(flag == 0)
+//	{
+		memset(&STG_SELF.sf, 0, sizeof(STG_SELF.sf));
+		STG_SELF.sf.f_col = 1;
+		STG_SELF.sf.f_row = 0;
+		STG_SELF.sf.start_byte = 0;
+		STG_SELF.sf.num_byte = 1;
+		HMI_Ram_init();
+		for(i = 0; i < STG_NUM_VRAM; i++) {
 			
+			
+			
+			if(i != STG_RUN_VRAM_NUM)
+			{
+				arr_p_vram[i] = HMI_Ram_alloc(48);
+				memset(arr_p_vram[i], 0, 48);
+			}
+			else
+			{
+				arr_p_vram[i] = HMI_Ram_alloc(sizeof(cns_run_t));
+				memset(arr_p_vram[i], 0, sizeof(cns_run_t));
+			}
+				
+//		}
+		STG_SELF.total_col = 2;
+		STG_SELF.total_row = row_num;
+		p_run = (cns_run_t *)arr_p_vram[STG_RUN_VRAM_NUM];
+		p_run->cur_page = 0;
+		p_run->cur_chn = 0;
 	}
-	STG_SELF.total_col = 2;
-	STG_SELF.total_row = row_num;
-	p_run = (cns_run_t *)arr_p_vram[STG_RUN_VRAM_NUM];
-	p_run->cur_page = 0;
-	p_run->cur_chn = 0;
-	
 	for(i = 0; i < NUM_CHANNEL; i++)
 		CNS_Set_mdl_tmp_buf(i, &p_run->tmp_info[i]);
 	return RET_OK;
@@ -369,6 +372,13 @@ static int Cns_key_dn(void *arg)
 			sprintf(p_run->win_buf,"Í¨µÀ[%d] Ð´ÈëÅäÖÃÊ§°Ü", i);
 			Win_content(p_run->win_buf);
 			STG_SELF.cmd_hdl(STG_SELF.p_cmd_rcv, sycmd_win_tips, NULL);
+		}
+		else
+		{
+			sprintf(p_run->win_buf,"ÅäÖÃÎ´ÐÞ¸Ä");
+			Win_content(p_run->win_buf);
+			STG_SELF.cmd_hdl(STG_SELF.p_cmd_rcv, sycmd_win_tips, NULL);
+			
 		}
 
 		 

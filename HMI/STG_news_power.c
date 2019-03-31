@@ -175,7 +175,9 @@ static int NPW_Entry(int row, int col, void *pp_text)
 static int NPW_Init(void *arg)
 {
 	int i = 0;
-	
+	int flag = *(int *)arg;
+	if(flag)
+		return 0;	
 	
 	HMI_Ram_init();
 	for(i = 0; i < STG_NUM_VRAM; i++) {

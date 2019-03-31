@@ -182,6 +182,8 @@ int	SmBus_DO_output(IN uint8_t chn, IN uint8_t val, OUT uint8_t *frame_buf, int 
 //		do_val = 3;
 //	else
 //		do_val = 0;
+	
+	do_val |= (chn << 4);
 	return SmBus_Write(0x51, 0x6b, 1, (uint8_t *)&do_val, frame_buf, buf_size);
 }
 

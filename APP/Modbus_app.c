@@ -207,6 +207,9 @@ static void MBA_Run(void)
 	uint8_t		modbus_ack_buf[280];  //系统最长的连续寄存器数量是32个，所以这么多字节能放下了
 	int			read_len;
 	
+	
+//	return;	//todo:debug
+	
 	read_len = p_MBA_uart->read(p_MBA_uart, modbus_buf, 96);
 	if(read_len <= 0)
 		return;

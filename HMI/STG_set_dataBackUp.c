@@ -231,9 +231,12 @@ static int DBP_init(void *arg)
 {
 	int			i;
 	dbp_run_t 	*p_run;
+	int flag = *(int *)arg;
+	if(flag)
+		return 0;
 	
 	kbr_cmt = DBP_filename_commit;
-
+	
 	memset(&g_DBP_strategy.sf, 0, sizeof(g_DBP_strategy.sf));
 	g_DBP_strategy.sf.f_col = 1;
 	g_DBP_strategy.sf.f_row = 1;

@@ -1314,7 +1314,17 @@ static int CRV_Win_cmd(void *p_rcv, int cmd,  void *arg)
 //				goto err;
 
 			if(TMF_Str_2_tm(p, &t) != RET_OK)
+			{
+				Win_content("设置时间错误");
 				goto err;
+			}
+			
+			if(Time_2_u32(&t) > SYS_time_sec())
+			{
+				
+				Win_content("非法时间");
+				goto err;
+			}
 		
 			
 			hst_mgr.set_start_sec = Time_2_u32(&t);
@@ -1333,7 +1343,6 @@ static int CRV_Win_cmd(void *p_rcv, int cmd,  void *arg)
 				
 				g_p_winHmi->arg[0] = WINTYPE_ERROR;
 				g_p_winHmi->arg[1] = WINFLAG_RETURN;
-				Win_content("设置时间错误");
 
 				//本界面已经在wincmd_commit之前的命令时已经被记录到历史列表里面了，所以这就不用再记录了
 				self->switchHMI(self, g_p_winHmi, HMI_ATT_NOT_RECORD);

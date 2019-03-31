@@ -253,8 +253,8 @@ int	EFS_open(uint8_t prt, char *path, char *mode, int	file_size)
 		
 		EFS_Init_file_sem(new_fd);
 		
-		p = strstr(mode, "cfg");
-		if(p == NULL)
+//		p = strstr(mode, "cfg");
+//		if(p == NULL)
 		{
 			//配置文件就不擦除了，否则可能会出现写入的配置信息被之后的删除给清除掉.
 			EFS_Erase_file(new_fd, 0, 0);
@@ -274,11 +274,11 @@ int	EFS_open(uint8_t prt, char *path, char *mode, int	file_size)
 	}
 	
 	
-	p = strstr(mode, "log");
+	p = strstr(mode, "forever");
 	if(p)
 	{
 		
-		efs_mgr.arr_static_info[new_fd].efs_flag  |= EFILE_LOG;
+		efs_mgr.arr_static_info[new_fd].efs_flag  |= EFILE_CANNOT_DELETE;
 	}
 	
 	EFS_Init_file_sem(new_fd);
@@ -694,7 +694,7 @@ file_info_t		*EFS_file_info(int fd)
 {
 	return efs_mgr.arr_dynamic_info + fd;
 }
-
+//thoroughly = 1 彻底重置文件系统
 void 	EFS_Reset(int thoroughly)
 {
 //	uint8_t		ver[2];
@@ -702,41 +702,26 @@ void 	EFS_Reset(int thoroughly)
 	
 	
 	efs_mgr.efs_flag |= EFS_BUSY;
-//	if(thoroughly)
-//	{
-//		//彻底重置文件系统
-////		for(i = 1; i < NUM_FSH; i ++)		
-////		{
-////			EFS_FSH(i).fsh_ersse(FSH_OPT_CHIP, 0);
-////			
-////		}
-//		
-//		for(i = 0; i < EFS_MAX_NUM_FILES; i++)
-//		{
-//				EFS_delete(i, NULL);
-//				EFS_flush_mgr(i);		
-//		}
-//	
-//	
-//	}
-//	else
-	{
+
 		
-		for(i = 0; i < EFS_MAX_NUM_FILES; i++)
+	for(i = 0; i < EFS_MAX_NUM_FILES; i++)
+	{
+		//擦除所有已经建立的文件
+//		if(((efs_mgr.arr_static_info[i].efs_flag & EFILE_LOG) == 0) && (efs_mgr.arr_static_info[i].efs_flag & EFILE_USED))
+		//出现过flag错误，导致文件系统就没办法恢复的情况  
+		if(((efs_mgr.arr_static_info[i].efs_flag & EFILE_CANNOT_DELETE) == 0) || \
+					EFILE_FALG_ERR(efs_mgr.arr_static_info[i].efs_flag) || thoroughly)		
 		{
-			//擦除所有已经建立的文件
-	//		if(((efs_mgr.arr_static_info[i].efs_flag & EFILE_LOG) == 0) && (efs_mgr.arr_static_info[i].efs_flag & EFILE_USED))
-			if((efs_mgr.arr_static_info[i].efs_flag & EFILE_LOG) == 0)
-			{
-				EFS_delete(i, NULL);
-	//			EFS_Erase_file(i, 0, 0);
-				EFS_flush_mgr(i);		
-			}
-			
+			EFS_delete(i, NULL);
+//			EFS_Erase_file(i, 0, 0);
+			EFS_flush_mgr(i);		
 		}
+	
+		
+	}
 		
 
-	}
+	
 	efs_mgr.efs_flag &= ~EFS_BUSY;	
 	
 //	
@@ -770,6 +755,7 @@ static int EFS_format(void)
 		ver[0] = EFS_SYS.major_ver ;
 		ver[1] = EFS_SYS.minor_ver;
 		EFS_FSH(EFS_MGR_FSH_NO).fsh_write(ver, 0, 2);
+		SYS_Reset(0, NUM_CHANNEL);
 //		memset((uint8_t *)efs_mgr.arr_static_info, 0, sizeof(efs_mgr.arr_static_info));
 //		EFS_FSH(EFS_MGR_FSH_NO).fsh_write((uint8_t *)efs_mgr.arr_static_info, 2, sizeof(efs_mgr.arr_static_info));
 		ret = RET_FAILED;

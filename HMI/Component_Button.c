@@ -398,13 +398,16 @@ static int		BTN_Move_focus(uint8_t	direction)
 }
 static void		BTN_Deal_hit(void)
 {
+	uint8_t		*p_set = &p_self->set_vaild_btn;
+
+	
 	if(p_self->focus_btn_num == 0xff)
 		return;
 	
 	if(p_self->arr_hdl[p_self->focus_btn_num] == NULL)
 		return;
-	
-	p_self->arr_hdl[p_self->focus_btn_num](p_self->arr_p_arg[p_self->focus_btn_num], \
-	arr_p_btn_sht[p_self->focus_btn_num]->id);
+	if(Check_bit(p_set, p_self->focus_btn_num))
+		p_self->arr_hdl[p_self->focus_btn_num](p_self->arr_p_arg[p_self->focus_btn_num], \
+			arr_p_btn_sht[p_self->focus_btn_num]->id);
 	
 }

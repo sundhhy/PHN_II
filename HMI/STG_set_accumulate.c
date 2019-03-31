@@ -169,7 +169,9 @@ static int SSA_Entry(int row, int col, void *pp_text)
 static int SSA_Init(void *arg)
 {
 	int i = 0;
-	
+	int flag = *(int *)arg;
+	if(flag)
+		return 0;	
 	memset(&STG_SELF.sf, 0, sizeof(STG_SELF.sf));
 	STG_SELF.sf.f_col = 1;
 	STG_SELF.sf.f_row = 0;
@@ -382,8 +384,11 @@ static void SSA_update_content(int op, int weight)
 			p_run->arr_conf_modify[p_run->cur_chn] = 0;
 			break;
 		case row_sum_enable:	
-			p_acc->enable_sum = Operate_in_range(p_acc->enable_sum, op, 1, 0, 1);
-			CNA_Print_enable(arr_p_vram[p_syf->f_row], p_acc->enable_sum);
+			if(CNA_Is_forbid(p_run->cur_chn) == 0)
+			{
+				p_acc->enable_sum = Operate_in_range(p_acc->enable_sum, op, 1, 0, 1);
+				CNA_Print_enable(arr_p_vram[p_syf->f_row], p_acc->enable_sum);
+			}
 			break;
 		case row_start_year:	
 			p_acc->sum_start_year = Operate_in_range(p_acc->sum_start_year, op, weight, 0, 99);

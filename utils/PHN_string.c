@@ -609,6 +609,7 @@ void Print_unit( char unit, char *buf, int len)
 			break;
 		case eu_mA:
 			strncpy( buf,su_mA, len);
+			break;
 		case eu_A:
 			strncpy( buf,su_A, len);
 			break;

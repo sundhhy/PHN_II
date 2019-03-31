@@ -89,6 +89,9 @@ static int ViewStrategy_entry(int row, int col, void *pp_text)
 
 static int VIEW_init(void *arg)
 {
+	int flag = *(int *)arg;
+	if(flag)
+		return 0;	
 	STG_SELF.total_col = 1;
 	STG_SELF.total_row = 7;
 	return RET_OK;

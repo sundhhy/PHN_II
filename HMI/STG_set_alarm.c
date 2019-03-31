@@ -98,7 +98,7 @@ typedef struct {
 //------------------------------------------------------------------------------
 // local vars
 //------------------------------------------------------------------------------
- static char *const arr_p_alarm_entry[num_rows] = {"通道号", "报警HH", "报警HI", "报警LO", \
+ static char *const arr_p_alarm_entry[num_rows] = {"通道号", "报警HH", "报警HI", "报警LI", \
 	 "报警LL", "触点HH", "触点HI", "触点LI", "触点LL", "报警回差"
  };
 	
@@ -155,6 +155,9 @@ static int Als_init(void *arg)
 {
 	int i = 0;
 	als_run_t *p_run;
+//	int flag = *(int *)arg;
+//	if(flag)
+//		return 0;	
 	memset(&g_chn_strategy.sf, 0, sizeof(g_chn_strategy.sf));
 	g_alarm_strategy.sf.f_col = 1;
 	g_alarm_strategy.sf.f_row = 0;

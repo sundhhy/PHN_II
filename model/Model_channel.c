@@ -7,6 +7,7 @@
 #include "Communication/smart_bus.h"
 #include "device.h"
 #include "os/os_depend.h"
+#include "channel_accumulated.h"
 
 #include "HMI/HMI.h"
 //通道模型:一个通道模型对应一个通道
@@ -366,7 +367,15 @@ int MdlChn_Commit_conf(int chn_num)
 		}
 		
 		if(singtype_change)
+		{
+			
 			MdlChn_default_alarm(chn_num);
+			if(p_mdl->chni.signal_type >= AI_0_10_mA)
+				CNA_Forbid_acc(chn_num, 0);
+			else
+				CNA_Forbid_acc(chn_num, 1);
+
+		}
 		//设置信号类型的时候，会把上下限也一起发送下去的
 //		if(p_info->lower_limit != p_mdl->chni.lower_limit)		
 //			self->setMdlData(self, chnaux_lower_limit, &p_info->lower_limit);
@@ -688,9 +697,9 @@ static void Signal_Alarm(Model_chn *cthis)
 		{	//低低报
 			#if TEST_SIMU_DATA == 0
 			p->alarm_out |= 1 << p_alm->touch_spot_ll;
-//			phn_sys.DO_err |= 1 << p_alm->touch_spot_ll;
+			p->alarm_out |= 1 << p_alm->touch_spot_lo;
 			#endif
-			new_flag |= ALM_LL;
+			new_flag |= ALM_LL | ALM_LO;
 		}
 		else
 		{	//低报
@@ -717,9 +726,11 @@ static void Signal_Alarm(Model_chn *cthis)
 				{		//高高报
 					#if TEST_SIMU_DATA == 0
 					p->alarm_out |= 1 << p_alm->touch_spot_hh;
+					p->alarm_out |= 1 << p_alm->touch_spot_hi;
 //					phn_sys.DO_err |= 1 << p_alm->touch_spot_hh;
 					#endif
 					new_flag |= ALM_HH;
+					new_flag |= ALM_HI;
 				}
 				else
 				{
@@ -1018,13 +1029,13 @@ static void MdlChn_run(Model *self)
 //	uint8_t				old_do;
 	
 #if TEST_SIMU_DATA == 1
-	uint16_t		*p_u16;
-	static  short				step = 1;
-	p_u16 = (uint16_t *)&cthis->chni.value;
+	int16_t		*p_u16;
+	static  short				step = 0;
+	p_u16 = (int16_t *)&cthis->chni.value;
 	
 	
-	cthis->chni.lower_limit = 0;
-	cthis->chni.upper_limit = 100;
+//	cthis->chni.lower_limit = 0;
+//	cthis->chni.upper_limit = 100;
 	//decimal_places 在这里用于测试
 
 //	cthis->alarm.alarm_hh = cthis->chni.upper_limit / 2;
@@ -1033,20 +1044,20 @@ static void MdlChn_run(Model *self)
 //	cthis->alarm.alarm_lo = cthis->chni.lower_limit /5;
 //	cthis->alarm.alarm_ll = cthis->chni.lower_limit /10;
 	
-	cthis->alarm.alarm_hh = 80;
-	cthis->alarm.alarm_hi = 60;
+	cthis->alarm.alarm_hh = cthis->chni.upper_limit - (cthis->chni.upper_limit - cthis->chni.lower_limit) / 10;
+	cthis->alarm.alarm_hi = cthis->chni.upper_limit - (cthis->chni.upper_limit - cthis->chni.lower_limit) / 5;
 	
-	cthis->alarm.alarm_lo = 40;
-	cthis->alarm.alarm_ll = 20;
+	cthis->alarm.alarm_lo = cthis->chni.lower_limit + (cthis->chni.upper_limit - cthis->chni.lower_limit) / 5;
+	cthis->alarm.alarm_ll = cthis->chni.lower_limit + (cthis->chni.upper_limit - cthis->chni.lower_limit) / 10;
 	
 	if(*p_u16 >= cthis->chni.upper_limit)
 	{
-		step = -1;
+		step = -1 * (cthis->chni.upper_limit - cthis->chni.lower_limit) / 50;
 		
 	}
-	else if(*p_u16 <= cthis->chni.lower_limit)
+	else if((*p_u16 <= cthis->chni.lower_limit)  || step == 0)
 	{
-		step = 1;
+		step = (cthis->chni.upper_limit - cthis->chni.lower_limit) / 50;
 		
 	}
 //	if(step > 0)
@@ -1063,9 +1074,7 @@ static void MdlChn_run(Model *self)
 	Signal_Alarm(cthis);
 	
 	self->notify(self);
-	save_buf[0] = cthis->chni.value;
-	save_buf[1] = cthis->chni.decimal_places;
-	stg->wr_stored_data(stg, STG_CHN_DATA(cthis->chni.chn_NO), save_buf, 4);
+
 #else	
 	
 	
@@ -1432,6 +1441,8 @@ static int MdlChn_setData(  Model *self, IN int aux, void *arg)
 			i = SmBus_AI_config(cthis->chni.chn_NO, &sb_conf, sbub_buf, 32);
 			if( I_uart3->write(I_uart3, sbub_buf, i) != RET_OK)
 				return ERR_OPT_FAILED;
+			
+			delay_ms(1000);
 			i = I_uart3->read(I_uart3, sbub_buf, 32);
 			if(i <= 0)
 				return ERR_OPT_FAILED;
@@ -1515,11 +1526,12 @@ static int MdlChn_setData(  Model *self, IN int aux, void *arg)
 			p_d = (do_out_t *)arg;
 			if(p_d->do_chn >= MAX_TOUCHSPOT)
 				break;
-			tmp_u8 = phn_sys.DO_val;
-			if(p_d->val)
-				tmp_u8 |= 1 << p_d->do_chn;
-			else
-				tmp_u8 &=~(1 << p_d->do_chn);
+//			tmp_u8 = phn_sys.DO_val;
+			tmp_u8 = p_d->val;
+//			if(p_d->val)
+//				tmp_u8 |= 1 << p_d->do_chn;
+//			else
+//				tmp_u8 &=~(1 << p_d->do_chn);
 			i = SmBus_DO_output(p_d->do_chn, tmp_u8, sbub_buf, 32);
 			if(I_uart3->write(I_uart3, sbub_buf, i) != RET_OK)
 				return ERR_OPT_FAILED;
@@ -1705,14 +1717,15 @@ static char* MdlChn_to_string( Model *self, IN int aux, void *arg)
 				strcat(p, "HI");
 				
 			}
-			else if(cthis->alarm.alm_flag & ALM_LO)
-			{
-				strcat(p, "LO");
-				
-			}
+			
 			else if(cthis->alarm.alm_flag & ALM_LL)
 			{
 				strcat(p, "LL");
+				
+			}
+			else if(cthis->alarm.alm_flag & ALM_LO)
+			{
+				strcat(p, "LI");
 				
 			}
 			else

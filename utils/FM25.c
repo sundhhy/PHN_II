@@ -149,6 +149,7 @@ int FM25_rd_data(uint8_t *pBuffer, uint32_t rd_add, uint32_t len)
 	FM25_cmd_addr(FM25CL64_READ,  rd_add);
 	ret = FM25_SPI_READ(pBuffer, len);
 	FM25_Disable_CS;
+//	delay_ms(1);
 	
 	return ret;
 	

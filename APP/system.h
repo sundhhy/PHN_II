@@ -85,24 +85,24 @@ typedef struct {
 	uint8_t		super_psd[3];
 	
 	//record_gap_s:sec 0:1 1:2 2:4 3:8 4:12 5:24 6:36 7:60 8:120 9:180 10:240 
-	uint8_t		set_gap_level;		// 
+	uint8_t		set_gap_level;		//  8B 
 	uint8_t		record_gap_s;		
 	uint8_t		break_couple;		//断偶处理方式: 始点，保持，终点
 	uint8_t		break_resistor;		//断阻处理
-	uint8_t		communication_mode;			//仪表与pc连接： 通讯； 仪表与打印机连接: 打印
+	uint8_t		communication_mode;			//仪表与pc连接： 通讯； 仪表与打印机连接: 打印   12B
 	
 	uint8_t		id;											// 1 - 63
 	uint8_t		baud_idx;
 	uint8_t		sys_flag;
-	uint8_t		cold_end_way;				//0 外部， 1 设定
+	uint8_t		cold_end_way;				//0 外部， 1 设定			16B
 	
 	uint8_t		CJC;								//冷端补偿 0-99 为设定模式
 	uint8_t		disable_modify_adjust_paramter;		//禁止修改调节参数
 	uint8_t		show_chn_status;					//禁止通道状态显示
-	uint8_t		enable_beep;											//按键声音允许
+	uint8_t		enable_beep;											//按键声音允许			20B
 	
 	int 			baud_rate;
-	uint32_t		storage_alarm;			//历史数据存储容量快耗尽时会产生警告信号，这个值作为阀值
+	uint32_t		storage_alarm;			//历史数据存储容量快耗尽时会产生警告信号，这个值作为阀值			28B
 }system_conf_t;
 
 //-----------HMI -----------------------------------------------

@@ -20,6 +20,8 @@
 #define STG_LSTPWR_FILE_OFFSET			0
 #define STG_PWR_FILE_SIZE				STG_MAX_NUM_LST_PWR * sizeof(rcd_alm_pwr_t)
 	
+#define STG_CFG_FILE_SIZE					(NUM_CHANNEL * sizeof(mdl_chn_save_t) + sizeof(system_conf_t))
+	
 #define STG_ALARM_FILE_OFFSET			STG_PWR_FILE_SIZE
 #define STG_CHN_ALARM_FILE_SIZE 		STG_MAX_NUM_CHNALARM * sizeof(rcd_alm_pwr_t)
 #define STG_ALARM_FILE_SIZE				STG_CHN_ALARM_FILE_SIZE * NUM_CHANNEL
@@ -47,7 +49,7 @@
 // const defines
 //------------------------------------------------------------------------------
 #define STG_SYS				phn_sys
-#define STRG_RCD_FSH_NUM		FSH_FM25_NUM
+//#define STRG_RCD_FSH_NUM		FSH_FM25_NUM
 #define STRG_CFG_FSH_NUM		FSH_FM25_NUM
 #define STRG_CHN_DATA_FSH_NUM	FSH_W25Q_NUM
 #define RCD_ERR					1
@@ -119,13 +121,12 @@ static int		Strg_WR_stored_data(Storage *self, uint8_t	cfg_type, void *buf, int 
 //static void Strg_Updata_rcd_mgr(uint8_t	num, mdl_chn_save_t *p);
 
 static int 	STG_Open_file(uint8_t type, uint32_t file_size);
-
+static int	STG_Acc_sys_conf(uint8_t	drc, void *p);
 static int	STG_Acc_chn_conf(uint8_t	tp, uint8_t	drc, void *p);
 static int	STG_Acc_chn_alarm(uint8_t	type, uint8_t	drc, void *p, int len);
 static int	STG_Acc_chn_data(uint8_t	type, uint8_t	drc, void *p, int len);
 static int	STG_Acc_chn_sum(uint8_t	type, uint8_t	drc, void *p, int len);
 static int	STG_Acc_file(uint8_t	type, uint8_t	drc, void *p, int len);
-static int	STG_Acc_sys_conf(uint8_t	drc, void *p);
 static int	STG_Acc_lose_pwr(uint8_t	drc, void *p, int len);
 
 static int STG_Read_chn_data_will_retry(int f, int retry, data_in_fsh_t *dif);
@@ -517,7 +518,7 @@ int	STG_Read_alm_pwr(uint8_t	chn_pwr,short start, char *buf, int buf_size, uint3
 				sprintf(alarm_code, "%d,HI",chn_pwr);
 				break;
 			case ALM_CODE_LO:
-				sprintf(alarm_code, "%d,LO",chn_pwr);
+				sprintf(alarm_code, "%d,LI",chn_pwr);
 				break;
 			case ALM_CODE_LL:
 				sprintf(alarm_code, "%d,LL",chn_pwr);
@@ -1328,34 +1329,34 @@ static int 	STG_Open_file(uint8_t type, uint32_t file_size)
 	
 	if(IS_SYS_CONF(type))
 	{
-		fd = STG_SYS.fs.fs_open(STRG_CFG_FSH_NUM, "phn.cfg", "log", 256);		//"log" 在删除文件系统的时候，不会被删除
+		fd = STG_SYS.fs.fs_open(STRG_CFG_FSH_NUM, "phn.cfg", "rw", STG_CFG_FILE_SIZE);		//"log" 在删除文件系统的时候，不会被删除
 		
 	}
 	else if(IS_CHN_CONF(type))
 	{
 		//通道配置与系统配置存放在同一个文件的不同位置
-		fd = STG_SYS.fs.fs_open(STRG_CFG_FSH_NUM, "phn.cfg", "rw", 256);
+		fd = STG_SYS.fs.fs_open(STRG_CFG_FSH_NUM, "phn.cfg", "rw", STG_CFG_FILE_SIZE);
 		
 	}
 	else if(IS_LOSE_PWR(type))
 	{
-		fd = STG_SYS.fs.fs_open(STRG_RCD_FSH_NUM, "alm_lost_pwr", "rw", STG_PAS_SIZE);
+		fd = STG_SYS.fs.fs_open(STRG_CFG_FSH_NUM, "alm_lost_pwr", "rw", STG_PAS_SIZE);
 		
 	}
 	else if(IS_CHN_ALARM(type))
 	{
-		fd = STG_SYS.fs.fs_open(STRG_RCD_FSH_NUM, "alm_lost_pwr", "rw", STG_PAS_SIZE);
+		fd = STG_SYS.fs.fs_open(STRG_CFG_FSH_NUM, "alm_lost_pwr", "rw", STG_PAS_SIZE);
 		
 	}
 	else if(IS_CHN_SUM(type))
 	{
-		fd = STG_SYS.fs.fs_open(STRG_RCD_FSH_NUM, "alm_lost_pwr", "rw", STG_PAS_SIZE);
+		fd = STG_SYS.fs.fs_open(STRG_CFG_FSH_NUM, "alm_lost_pwr", "rw", STG_PAS_SIZE);
 		
 	}
 	else if(IS_LOG(type))
 	{
 		//log 模式的文件不会在文件系统复位的时候被删除
-		fd = STG_SYS.fs.fs_open(STRG_RCD_FSH_NUM, "SDH_LOG.CSV", "log", STG_LOG_FILE_SIZE);
+		fd = STG_SYS.fs.fs_open(STRG_CFG_FSH_NUM, "SDH_LOG.CSV", "forever", STG_LOG_FILE_SIZE);
 		
 	}
 	else if(IS_CHN_DATA(type))

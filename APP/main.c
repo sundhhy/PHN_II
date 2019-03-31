@@ -134,7 +134,13 @@ int main (void) {
 	
 	
 	//¿ØÖÆÆ÷³õÊ¼»¯
-//#if TDD_ON == 0
+#if TDD_ON == 1
+	Tdd_Init();
+	
+# if TDD_FM25
+	TDD_Fm25();
+#	endif
+#endif
 
 	
 	Unit_test();

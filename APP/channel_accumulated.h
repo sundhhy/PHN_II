@@ -34,5 +34,6 @@ void CNA_Print_acc_val(uint16_t *p_val, char *s, char pos);
 int		CNA_Commit(char chn_num);
 int		CNA_Clear(char chn_num);
 uint64_t CNA_arr_u16_2_u64(uint16_t *p_u16, char num_data);
-
+void CNA_Forbid_acc(int chn_num, int forbid);
+int CNA_Is_forbid(int chn_num);
 #endif

@@ -191,28 +191,28 @@ typedef struct {
 
 typedef struct
 {
-	uint8_t			alarm_backlash;		//报警回差  0 - 10.0%			29
+	uint8_t			alarm_backlash;		//报警回差  0 - 10.0%			
 	uint8_t			tag_NO;
 	uint8_t			signal_type;
 	uint8_t			unit;
 	uint8_t			MB;			//记录容量，M
 	uint8_t			filter_time_s;
 	uint8_t			decimal;
-	uint8_t			none;		//0 无错误， 1 采样失败
+	uint8_t			none;		//0 无错误， 1 采样失败  8
 	short				small_signal;
-	int16_t			lower_limit, upper_limit;		//
-	short				k,b;													//16
+	int16_t			lower_limit, upper_limit;		// 14
+	short				k,b;													//18
 	
 	short				alarm_hh;
 	short				alarm_hi;
 	short				alarm_lo;
-	short				alarm_ll;											//24
+	short				alarm_ll;											//26
 	
 	//报警输出触点
 	uint8_t				touch_spot_hh;
 	uint8_t				touch_spot_hi;
 	uint8_t				touch_spot_lo;
-	uint8_t				touch_spot_ll;						//28
+	uint8_t				touch_spot_ll;						//30
 	
 //	uint8_t				alarm_backlash;		//报警回差  0 - 10.0%			29
 //	uint8_t				none[3];							//32

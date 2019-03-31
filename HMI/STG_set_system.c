@@ -228,6 +228,10 @@ static int Sys_init(void *arg)
 {
 	int i = 0;
 	sys_run_t *p_run;
+	int flag = *(int *)arg;
+	if(flag)
+		return 0;	
+	
 	memset(&STG_SELF.sf, 0, sizeof(STG_SELF.sf));
 	STG_SELF.sf.f_col = 1;
 	STG_SELF.sf.f_row = 0;

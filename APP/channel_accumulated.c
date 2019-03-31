@@ -19,6 +19,7 @@
 //------------------------------------------------------------------------------
 
 rcd_chn_accumlated_t	arr_chn_acc[NUM_CHANNEL];
+
 //------------------------------------------------------------------------------
 // global function prototypes
 //------------------------------------------------------------------------------
@@ -38,7 +39,7 @@ rcd_chn_accumlated_t	arr_chn_acc[NUM_CHANNEL];
 //------------------------------------------------------------------------------
 // local vars
 //------------------------------------------------------------------------------
-
+static uint8_t acc_forbid_flg[8] = {0};
 //------------------------------------------------------------------------------
 // local function prototypes
 //------------------------------------------------------------------------------
@@ -111,6 +112,10 @@ void CNA_Run(int cyc_ms)
 	cur_time_s = Time_2_u32(&SYS_TIME);
 	for(chn_num = 0; chn_num < phn_sys.sys_conf.num_chn; chn_num ++)
 	{
+		
+		if(CNA_Is_forbid(chn_num))
+			continue;
+		
 		t.tm_year = arr_chn_acc[chn_num].sum_start_year;
 		t.tm_mon = arr_chn_acc[chn_num].sum_start_month;
 		t.tm_mday = arr_chn_acc[chn_num].sum_start_day;
@@ -186,7 +191,8 @@ void CNA_Run(int cyc_ms)
 		p_mc = Get_Mode_chn(chn_num);
 		
 		//sundh 1812 
-		if(p_mc->chni.signal_type >= AI_0_20_mV)
+//		if(p_mc->chni.signal_type >= AI_0_20_mV)
+		
 		{
 			
 			
@@ -225,11 +231,11 @@ void CNA_Run(int cyc_ms)
 			CNA_u64_add(arr_chn_acc[chn_num].accumlated_year, sum, 3);
 			CNA_u64_add(arr_chn_acc[chn_num].accumlated_total, sum, 3);
 		}
-		else
-		{
-			memset(&arr_chn_acc[chn_num], 0, sizeof(rcd_chn_accumlated_t));
-			
-		}
+//		else
+//		{
+//			memset(&arr_chn_acc[chn_num], 0, sizeof(rcd_chn_accumlated_t));
+//			
+//		}
 			
 		//写入flash
 		CNA_Commit(chn_num);
@@ -272,6 +278,27 @@ uint64_t CNA_arr_u16_2_u64(uint16_t *p_u16, char num_data)
 	
 //	return rst;
 	return 0xffffffffffff;
+}
+
+void CNA_Forbid_acc(int chn_num, int forbid)
+{
+	if(forbid)
+	{
+		acc_forbid_flg[chn_num] = 1;
+		arr_chn_acc[chn_num].enable_sum = 0;
+		memset(&arr_chn_acc[chn_num], 0, sizeof(rcd_chn_accumlated_t));
+		CNA_Commit(chn_num);
+	}
+	else
+	{
+		acc_forbid_flg[chn_num] = 0;
+		
+	}
+}
+int CNA_Is_forbid(int chn_num)
+{
+	
+	return acc_forbid_flg[chn_num];
 }
 
 //pos 小数点位数
