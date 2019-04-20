@@ -214,7 +214,10 @@ static void		CRV_Add_point(uint8_t  crv_fd, uint8_t	prc)
 //		
 //	}
 	if(prc > 100)
-		prc = 100;
+	{
+//		prc = 100;
+		return;
+	}
 	
 	
 	range = p_CRV_self->p_crv_att[crv_fd].crv_y1 - p_CRV_self->p_crv_att[crv_fd].crv_y0;
@@ -640,6 +643,7 @@ static void		CRV_Show_curve(uint8_t  crv_fd, uint8_t show_ctl)
 {
 	
 	short	i = 0, has_show = 0;
+	curve_att_t	*p_att;
 	
 	if(show_ctl == CRV_SHOW_WHOLE)		
 		CRV_Set_dirty(HMI_CMP_ALL, 1);
@@ -656,6 +660,7 @@ static void		CRV_Show_curve(uint8_t  crv_fd, uint8_t show_ctl)
 		}
 		if(Check_bit(&p_CRV_self->set_vaild_curve, i) == 0)
 			continue;
+		p_att = &p_CRV_self->p_crv_att[i];
 		if(p_CRV_self->p_crv_att[i].crv_flag & CRV_FLAG_HIDE)
 			continue;
 		

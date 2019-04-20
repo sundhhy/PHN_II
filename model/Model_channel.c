@@ -1184,7 +1184,7 @@ static void MdlChn_run(Model *self)
 		else
 		{
 			cthis->chni.flag_err |= CHN_ERR_BREAK;
-			rst.val = cthis->chni.value;
+			rst.val = cthis->chni.lower_limit;
 			goto deal_val;		//跳过K B线性化等操作
 		}
 		
@@ -1267,8 +1267,8 @@ static int MdlChn_getData(Model *self, IN int aux, void *arg)
 	Dev_open(DEVID_UART3, ( void *)&I_uart3);
 	switch(aux) {
 		case AUX_DATA:
-			if(cthis->chni.flag_err)
-				return -1;
+//			if(cthis->chni.flag_err)
+//				return -1;
 			p_s16 = (int16_t *)arg;
 			*p_s16 = cthis->chni.value;
 			break;
@@ -1443,13 +1443,13 @@ static int MdlChn_setData(  Model *self, IN int aux, void *arg)
 				return ERR_OPT_FAILED;
 			
 			delay_ms(1000);
-			i = I_uart3->read(I_uart3, sbub_buf, 32);
-			if(i <= 0)
-				return ERR_OPT_FAILED;
-			if(SmBus_decode(SMBUS_AI_CONFIG, sbub_buf, &tmp_u8, 1) != RET_OK)
-				return ERR_OPT_FAILED;
-			if(tmp_u8 != cthis->chni.chn_NO)
-				return ERR_OPT_FAILED;
+//			i = I_uart3->read(I_uart3, sbub_buf, 32);
+//			if(i <= 0)
+//				return ERR_OPT_FAILED;
+//			if(SmBus_decode(SMBUS_AI_CONFIG, sbub_buf, &tmp_u8, 1) != RET_OK)
+//				return ERR_OPT_FAILED;
+//			if(tmp_u8 != cthis->chni.chn_NO)
+//				return ERR_OPT_FAILED;
 			//回读检查
 
 			//1812 回读检查不需要了

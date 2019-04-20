@@ -146,7 +146,9 @@ uint16_t MBC_Decode_pkt(uint8_t *command_buf, int cmd_len, uint8_t *ack_buf, int
 					
 				for(i=0; i<regNum; i++)
 				{
-					data = *p_ram_u16 ++;
+					
+					ret = MBC_reg_2_ram(startReg, 1, READ_HOLD, &p_ram_u16);
+					data = *p_ram_u16 ;
 					
 			#ifdef CPU_LITTLE_END
 					data = Little_end_to_Big_end( data);
@@ -156,6 +158,7 @@ uint16_t MBC_Decode_pkt(uint8_t *command_buf, int cmd_len, uint8_t *ack_buf, int
 					ack_num++; 
 					ack_buf[ack_num] = data >>8;				
 					ack_num++;	
+					startReg ++;
 				}
 			break;
 		/*读输入寄存器 4区，保持寄存器------------------------------------------------------------------*/

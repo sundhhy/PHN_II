@@ -156,6 +156,7 @@ int			MBC_reg_2_ram(uint16_t	reg, uint16_t reg_num, char mbc_cmd, void *ram_ptr)
 	acc_func = MBA_Get_acc_func(ret);
 	switch(mbc_cmd)
 	{
+		case READ_INPUT:
 		case READ_HOLD:
 			
 			if(acc_func(reg - arr_areas[ret][0], MBA_ACC_READ, &mba_ram) != RET_OK)
@@ -236,7 +237,7 @@ static int MBA_reg_2_area(uint16_t reg_addr, uint16_t num_reg)
 	int			area_num = -1;
 	
 	reg_area[0] = reg_addr;
-	reg_area[1] = reg_addr + num_reg;
+	reg_area[1] = reg_addr + num_reg - 1;
 	
 	for(i = 0; i < 8; i++)
 	{
@@ -392,7 +393,22 @@ static int MBA_Acc_param_system(uint16_t	offset, char rd_or_wr, uint16_t *p)
 		case 4:
 			if(rd_or_wr == MBA_ACC_READ)
 			{
-				*p = p_sys_conf->CJC;
+				
+				
+				
+				if(p_sys_conf->cold_end_way)
+				{
+					
+					*p = p_sys_conf->CJC;
+					
+					
+				}
+				else
+				{
+					
+					*p = phn_sys.code_end_temperature;
+					
+				}
 			}
 			else 
 			{
@@ -535,7 +551,7 @@ static int MBA_Acc_param_channel(uint16_t	offset, char rd_or_wr, uint16_t *p)
 				
 			}
 			break;
-		
+		case 6:
 		case 8:
 			if(rd_or_wr == MBA_ACC_READ)
 			{
@@ -554,6 +570,7 @@ static int MBA_Acc_param_channel(uint16_t	offset, char rd_or_wr, uint16_t *p)
 				
 			}
 			break;
+		case 7:
 		case 9:
 			if(rd_or_wr == MBA_ACC_READ)
 			{
@@ -835,8 +852,6 @@ static int MBA_Acc_param_channel(uint16_t	offset, char rd_or_wr, uint16_t *p)
 				
 			}
 			break;			
-		case 6:
-		case 7:
 		case 12:
 		case 13:
 		case 14:
@@ -879,11 +894,26 @@ static int MBA_Acc_param_transmitting(uint16_t	offset, char rd_or_wr, uint16_t *
 }
 static int MBA_Acc_param_accumulation(uint16_t	offset, char rd_or_wr, uint16_t *p)
 {
+	rcd_chn_accumlated_t	*p_cna;
+	char					chn_num = offset / 0x02;
+	uint8_t					chn_offset = offset % 0x02;
+	char					day_or_month = 0;
+	char					part = 0;
 	
-	if(rd_or_wr == MBA_ACC_READ)
+	if(rd_or_wr == MBA_ACC_WRITE)
 	{
-
-		*p = 0;
+		
+		return ERR_NOT_SUPPORT;
+	}
+	
+	p_cna = arr_chn_acc + chn_num;
+	if(chn_offset == 0)
+	{
+		*p = p_cna->enable_sum;
+	}
+	else if(chn_offset == 1)
+	{
+		*p = p_cna->sum_start_day;
 	}
 	return RET_OK;
 }
@@ -958,7 +988,8 @@ static int MBA_Acc_data_real_time(uint16_t	offset, char rd_or_wr, uint16_t *p)
 		case 11:
 			p_mc = Get_Mode_chn(offset - 6);
 			p_md = SUPER_PTR(p_mc, Model);
-			p_md->getMdlData(p_md, AUX_DATA, p);
+			if(p_md->getMdlData(p_md, AUX_DATA, p) < 0)
+				*p = 0;
 			break;
 		default:
 			*p = 0;

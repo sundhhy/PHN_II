@@ -342,13 +342,13 @@ static int Sys_key_up(void *arg)
 		 {
 			 i = SmBus_Set_cold_tmpr(p_run->temp_sys_conf.CJC, sbub_buf, 32);
 			 I_uart3->write(I_uart3, sbub_buf, i);
-			 delay_ms(100);
-			 i = I_uart3->read(I_uart3, sbub_buf, 32);
-			if(i <= 0)
-			{
-				set_cld_failed = 1;
+			 delay_ms(1000);
+//			 i = I_uart3->read(I_uart3, sbub_buf, 32);
+//			if(i <= 0)
+//			{
+//				set_cld_failed = 1;
 
-			}
+//			}
 			 
 		 }
 		 
@@ -386,6 +386,13 @@ static int Sys_key_up(void *arg)
 				
 			
 			p_run->flag_conf_change = 0;;
+		}
+		else
+		{
+			sprintf(arr_p_vram[STG_TIPS_VRAM_NUM],"No data change!");
+			Win_content(arr_p_vram[STG_TIPS_VRAM_NUM]);
+			STG_SELF.cmd_hdl(STG_SELF.p_cmd_rcv, sycmd_win_tips, NULL);
+			
 		}
 			
 			

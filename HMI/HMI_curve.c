@@ -235,6 +235,8 @@ static int	Init_RT_trendHMI( HMI *self, void *arg)
 		g_arr_p_check[i]->area.y0 += i * CHNSHOW_ROW_SPACE;
 		g_arr_p_check[i]->area.y1 += i * CHNSHOW_ROW_SPACE;
 		g_arr_p_check[i]->id = SHTID_CHECK(i);
+		
+		
 	}
 
 	cthis->p_div = Sheet_alloc(p_shtctl);
@@ -250,6 +252,7 @@ static void RT_trendHmi_InitSheet( HMI *self, uint32_t att )
 	RLT_trendHMI	*cthis = SUB_PTR( self, HMI, RLT_trendHMI);
 	Expr 			*p_exp ;
 	shtctl 			*p_shtctl = NULL;
+	
 	int 			h = 0;
 	int				i;
 	
@@ -374,6 +377,14 @@ static void HMI_CRV_Build_cmp(HMI *self)
 			crv.crv_max_num_data = CRV_MAX_PIXS + 1;
 		
 		cthis->arr_crv_fd[i] = p_crv->alloc(&crv);
+		
+		if(cthis->chn_show_map & (1 << i)) {
+			
+				p_crv->crv_ctl(cthis->arr_crv_fd[i], CRV_CTL_HIDE, 0);
+		}
+		else {
+			p_crv->crv_ctl(cthis->arr_crv_fd[i], CRV_CTL_HIDE, 1);
+		}
 	}
 
 }
@@ -423,6 +434,7 @@ static void RLT_btn_hdl(void *arg, uint8_t btn_id)
 static void	RLT_init_focus(HMI *self)
 {
 	short	col = 0, offset; 
+	int i;
 	RLT_trendHMI *cthis = SUB_PTR(self, HMI, RLT_trendHMI);
 	
 	
@@ -438,7 +450,10 @@ static void	RLT_init_focus(HMI *self)
 		
 	}
 	
-	
+	for(i = 0; i < phn_sys.sys_conf.num_chn; i++) {
+		if(self->arg[0] == 1)		//history cure only display gou
+					g_arr_p_check[i]->area.n = 0;
+	}
 	
 	Focus_Set_focus(self->p_fcuu, 0, 0);
 	
@@ -476,7 +491,6 @@ static void	RLT_clear_focus(HMI *self, uint8_t fouse_row, uint8_t fouse_col)
 static void	RLT_show_focus(HMI *self, uint8_t fouse_row, uint8_t fouse_col)
 {
 	sheet *p_sht = Focus_Get_focus(self->p_fcuu);
-	
 	if(p_sht == NULL)
 		return;
 	
@@ -486,7 +500,14 @@ static void	RLT_show_focus(HMI *self, uint8_t fouse_row, uint8_t fouse_col)
 		if(p_sht->area.n == 0)
 			p_sht->area.n = 1;
 		else if(p_sht->area.n == 2)
+		{
 			p_sht->area.n = 3;
+			
+			
+		}
+		
+		
+		
 		
 	} else {
 		p_sht->cnt.effects = GP_SET_EFF( p_sht->cnt.effects, EFF_FOCUS);
@@ -725,7 +746,7 @@ static void	RT_trendHmi_HitHandle( HMI *self, char kcd)
 						
 						//目前所有的曲线都是统一显示的，因此显示记录要保持一致
 //						memset(hst_mgr.arr_hst_num, 0 , sizeof(hst_mgr.arr_hst_num));
-
+						
 						p_focus->p_gp->vdraw(p_focus->p_gp, &p_focus->cnt, &p_focus->area);
 						Flush_LCD();
 						
@@ -1064,7 +1085,7 @@ static void HMI_CRV_HST_Run(HMI *self)
 		{
 			hst_mgr.arr_hst_num[i] = STG_Read_data_by_time(i, time_s, hst_mgr.arr_hst_num[i], &d);
 			hst_mgr.arr_hst_num[i] ++;
-			//如果某个时间点没有数据，则装入0
+			//如果某个时间点没有数据，则装入0xff
 			if(d.rcd_time_s != 0xffffffff)
 			{
 				
@@ -1075,7 +1096,7 @@ static void HMI_CRV_HST_Run(HMI *self)
 			{
 				
 //				crv_prc = last_prc[i];
-				crv_prc = 0;
+				crv_prc = 0xff;
 			}
 			
 			
@@ -1216,7 +1237,7 @@ static void HMI_CRV_RTV_Run(HMI *self)
 		g_arr_p_chnData[i]->cnt.len = strlen(g_arr_p_chnData[i]->cnt.data);
 		g_arr_p_chnData[i]->p_gp->vdraw(g_arr_p_chnData[i]->p_gp, &g_arr_p_chnData[i]->cnt, &g_arr_p_chnData[i]->area);
 		
-
+		
 	}
 	
 	if(hst_mgr.rtv_reflush == 0)
@@ -1225,6 +1246,7 @@ static void HMI_CRV_RTV_Run(HMI *self)
 	{
 		hst_mgr.rtv_reflush = 0;
 		p_crv->crv_show_curve(HMI_CMP_ALL, CRV_SHOW_WHOLE);
+		
 		
 	}
 	
@@ -1245,6 +1267,7 @@ static void RLT_Init_curve(HMI *self)
 	
 	HMI_Ram_init();		//曲线需要使用的缓存
 	HST_Init(self);
+
 
 }
 

@@ -553,15 +553,14 @@ ARM Macro Assembler    Page 9
               00000000 
 Command Line: --debug --xref --diag_suppress=9931 --cpu=Cortex-M3 --apcs=interw
 ork --depend=.\objects\startup_stm32f10x_hd.d -o.\objects\startup_stm32f10x_hd.
-o -ID:\PaperlessRecorder\myCode\PHN_II\project\keil5\RTE -ID:\PaperlessRecorder
-\myCode\PHN_II\project\keil5\RTE\Device\STM32F103VC -IE:\Keil_v5\ARM\PACK\ARM\C
-MSIS\4.5.0\CMSIS\Include -IE:\Keil_v5\ARM\PACK\ARM\CMSIS\4.5.0\CMSIS\RTOS\RTX\I
-NC -IE:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\2.1.0\Device\Include -IE:\Keil_v5\A
-RM\PACK\Keil\STM32F1xx_DFP\2.1.0\Device\StdPeriph_Driver\inc -IE:\Keil_v5\ARM\P
-ACK\Keil\STM32F1xx_DFP\2.1.0 --predefine="__RTX SETA 1" --predefine="__MICROLIB
- SETA 1" --predefine="__UVISION_VERSION SETA 517" --predefine="_RTE_ SETA 1" --
-predefine="STM32F10X_HD SETA 1" --list=.\listings\startup_stm32f10x_hd.lst RTE\
-Device\STM32F103VC\startup_stm32f10x_hd.s
+o -I.\RTE\Device\STM32F103VC -I.\RTE\_new -IE:\Keil_v5\ARM\PACK\ARM\CMSIS\5.4.0
+\CMSIS\Core\Include -IE:\Keil_v5\ARM\PACK\ARM\CMSIS\5.4.0\CMSIS\RTOS\RTX\INC -I
+E:\Keil_v5\ARM\PACK\Keil\STM32F1xx_DFP\2.1.0\Device\Include -IE:\Keil_v5\ARM\PA
+CK\Keil\STM32F1xx_DFP\2.1.0\Device\StdPeriph_Driver\inc -IE:\Keil_v5\ARM\PACK\K
+eil\STM32F1xx_DFP\2.1.0 --predefine="__RTX SETA 1" --predefine="__MICROLIB SETA
+ 1" --predefine="__UVISION_VERSION SETA 526" --predefine="_RTE_ SETA 1" --prede
+fine="STM32F10X_HD SETA 1" --list=.\listings\startup_stm32f10x_hd.lst RTE\Devic
+e\STM32F103VC\startup_stm32f10x_hd.s
 
 
 
